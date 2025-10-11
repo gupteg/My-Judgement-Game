@@ -1,7 +1,10 @@
 window.addEventListener('DOMContentLoaded', () => {
-    const socket = io();
+    // FIX: Use the full Render URL for a reliable connection
+    const socket = io('https://my-judgement-game.onrender.com');
+
     window.gameState = {};
     let myPersistentPlayerId = sessionStorage.getItem('judgmentPlayerId');
+    let isInitialGameRender = true; // Flag to handle mobile scroll position
     let pauseCountdownInterval;
     let lobbyReturnInterval;
     let trickReviewInterval;
@@ -30,10 +33,11 @@ window.addEventListener('DOMContentLoaded', () => {
         document.getElementById('lobby-screen').style.display = 'none';
         document.getElementById('game-board').style.display = 'flex';
 
-        // Default to center column on game start
-        const scrollContainer = document.getElementById('mobile-scroll-container');
-        if (scrollContainer.scrollLeft === 0) {
+        // FIX: Only set initial scroll position once to prevent snapping
+        if (isInitialGameRender) {
+            const scrollContainer = document.getElementById('mobile-scroll-container');
             scrollContainer.scrollTo({ left: scrollContainer.offsetWidth, behavior: 'auto' });
+            isInitialGameRender = false;
         }
 
         const scoreboardModal = document.getElementById('scoreboard-modal');
@@ -205,6 +209,7 @@ window.addEventListener('DOMContentLoaded', () => {
     socket.on('lobbyUpdate', (players) => {
         if (lobbyReturnInterval) clearInterval(lobbyReturnInterval);
         document.getElementById('scoreboard-modal').style.display = 'none';
+        isInitialGameRender = true; // Reset scroll flag when returning to lobby
         renderLobby(players);
     });
 

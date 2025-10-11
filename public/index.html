@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Judgment Clubhouse</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div id="join-screen">
+        <h1>Judgment</h1>
+        <p>A Game of Prediction & Strategy</p>
+        <input type="text" id="player-name-input" placeholder="Enter your name">
+        <button id="join-game-btn">Join Game</button>
+    </div>
+
+    <div id="lobby-screen" style="display: none;">
+        <h2>Game Lobby</h2>
+        <h3>Players:</h3>
+        <ul id="player-list"></ul>
+        <div class="lobby-actions">
+            <button id="ready-btn">Ready</button>
+            <button id="start-game-btn">Start Game</button>
+            <button id="end-session-btn">End Session</button>
+        </div>
+        <p id="host-message" style="display: none;">(Waiting for the host to start the game)</p>
+    </div>
+
+    <div id="game-board" style="display: none;">
+        <div id="trick-winner-overlay"></div>
+        <div id="winner-celebration-overlay" class="hidden"></div>
+        <div id="game-status-banner"></div>
+        <div id="page-indicator"></div>
+
+        <div id="mobile-scroll-container">
+            <div id="left-column">
+                <div id="toast-notification"></div>
+
+                <div id="scoreboard-modal" class="modal" style="display: none;">
+                    <div class="modal-content">
+                        <h2 id="scoreboard-title"></h2>
+                        <div id="scoreboard-table-container"></div>
+                        <div id="next-round-preview"></div>
+                        <div id="lobby-return-countdown"></div>
+                        <div id="host-round-end-controls" class="modal-actions" style="display: none;">
+                            <button id="start-next-round-btn">Start Next Round</button>
+                            <button id="end-game-from-modal-btn">End Game</button>
+                        </div>
+                        <div id="player-round-end-controls" class="modal-actions" style="display: none;">
+                            <button id="player-ok-btn">OK</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="confirm-end-game-modal" class="modal" style="display: none;">
+                    <div class="modal-content">
+                        <h2>End Game</h2>
+                        <p>Are you sure you want to end the game for everyone?</p>
+                        <div class="modal-actions">
+                            <button id="confirm-end-yes-btn">Yes, End Game</button>
+                            <button id="confirm-end-no-btn">No, Continue</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="local-player-stats"></div>
+                <div id="action-banner">
+                    <span id="action-banner-text"></span>
+                    <div id="action-banner-input-area" style="display: none;">
+                        <select id="bid-input"></select>
+                        <button id="submit-bid-btn">Submit</button>
+                    </div>
+                </div>
+                <div class="hand-controls">
+                    <button id="rearrange-hand-btn">Arrange My Cards</button> </div>
+                <div id="local-player-hand-area"></div>
+                <div id="local-player-score-board">
+                    <div class="score-box" id="my-bid-box">
+                        <h4>My Bid</h4>
+                        <span id="my-bid-value"></span>
+                    </div>
+                    <div class="score-box" id="my-tricks-box">
+                        <h4>Tricks Won</h4>
+                        <span id="my-tricks-value"></span>
+                    </div>
+                    <div class="score-box" id="my-score-box">
+                        <h4>My Score</h4>
+                        <span id="my-score-value"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div id="center-column">
+                <div id="player-slots-container"></div>
+            </div>
+
+            <div id="right-column">
+                <div id="round-title-board"></div>
+                <div class="info-board-row">
+                    <div class="info-board" id="cards-dealt-board"></div>
+                    <div class="info-board" id="total-bids-board"></div>
+                </div>
+                <div class="info-board" id="trump-info-panel"></div>
+                <div class="info-board" id="lead-suit-info-panel"></div>
+                <div id="game-log-container">
+                    <h4>Game Log</h4>
+                    <ul id="game-log-list"></ul>
+                </div>
+                <button id="endGameBtn" style="display: none;">END GAME</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="game.js"></script>
+</body>
+</html>

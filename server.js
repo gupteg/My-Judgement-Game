@@ -20,28 +20,25 @@ const SUITS = ['Spades', 'Hearts', 'Diamonds', 'Clubs'];
 const RANKS = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
 const RANK_VALUES = { '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8, '9': 9, '10': 10, 'J': 11, 'Q': 12, 'K': 13, 'A': 14 };
 
-setInterval(serverGameLoop, 1000);
+// Removed the inefficient setInterval game loop
 
-function serverGameLoop() {
-    if (!gameState || gameState.isPaused) {
-        return;
-    }
-    if (gameState.phase === 'TrickReview' && gameState.nextTrickReviewEnd && Date.now() > gameState.nextTrickReviewEnd) {
-        let winnerIndex = gameState.players.findIndex(p => p.playerId === gameState.trickWinnerId);
-        gameState.phase = 'Playing';
-        gameState.currentTrick = [];
-        gameState.leadSuit = null;
-        gameState.trickWinnerId = null;
-        gameState.nextTrickReviewEnd = null;
-        gameState.currentWinningPlayerId = null; // Housekeeping fix: Clear the winner cup icon
+function startNextTrick() {
+    if (!gameState || gameState.isPaused || gameState.phase !== 'TrickReview') return;
 
-        if (winnerIndex === -1 || gameState.players[winnerIndex].status !== 'Active') {
-            gameState.currentPlayerIndex = findNextActivePlayer(winnerIndex, gameState.players, false);
-        } else {
-            gameState.currentPlayerIndex = winnerIndex;
-        }
-        io.emit('updateGameState', gameState);
+    let winnerIndex = gameState.players.findIndex(p => p.playerId === gameState.trickWinnerId);
+    gameState.phase = 'Playing';
+    gameState.currentTrick = [];
+    gameState.leadSuit = null;
+    gameState.trickWinnerId = null;
+    gameState.nextTrickReviewEnd = null;
+    gameState.currentWinningPlayerId = null;
+
+    if (winnerIndex === -1 || gameState.players[winnerIndex].status !== 'Active') {
+        gameState.currentPlayerIndex = findNextActivePlayer(winnerIndex, gameState.players, false);
+    } else {
+        gameState.currentPlayerIndex = winnerIndex;
     }
+    io.emit('updateGameState', gameState);
 }
 
 function findNextActivePlayer(startIndex, players, startFromNext = true) {
@@ -171,6 +168,8 @@ function evaluateTrick() {
     gameState.trickWinnerId = winnerData?.playerId;
     gameState.nextTrickReviewEnd = Date.now() + 10000;
     io.emit('updateGameState', gameState);
+    // Set a one-time timer to start the next trick, replacing the inefficient game loop
+    setTimeout(startNextTrick, 10000);
 }
 
 function handlePlayerRemoval(playerId) {
@@ -404,11 +403,12 @@ io.on('connection', (socket) => {
             const disconnectedPlayer = players.find(p => p.socketId === socket.id);
             if (disconnectedPlayer) {
                 disconnectedPlayer.active = false;
+                // FIX: Notify other clients about the lobby player's status change
                 io.emit('lobbyUpdate', players);
             }
         }
     });
 });
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => console.log(`✅ Judgment Clubhouse Server is live on port ${PORT}`));

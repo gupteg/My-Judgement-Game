@@ -141,7 +141,10 @@ window.addEventListener('DOMContentLoaded', () => {
     }
 
     function setupLobbyListeners() {
-        document.getElementById('start-game-btn').addEventListener('click', () => socket.emit('startGame'));
+        document.getElementById('start-game-btn').addEventListener('click', () => {
+    const password = document.getElementById('host-password-input').value;
+    socket.emit('startGame', { password: password }); // Send the password object
+});
         document.getElementById('ready-btn').addEventListener('click', () => socket.emit('setPlayerReady'));
         document.getElementById('end-session-btn').addEventListener('click', () => socket.emit('endGame'));
     }
@@ -322,6 +325,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
         readyBtn.style.display = me.isHost ? 'none' : 'block';
         document.getElementById('start-game-btn').style.display = me.isHost ? 'block' : 'none';
+        document.getElementById('host-password-area').style.display = me.isHost ? 'block' : 'none';
         document.getElementById('end-session-btn').style.display = me.isHost ? 'block' : 'none';
         document.getElementById('host-message').style.display = me.isHost ? 'none' : 'block';
     }

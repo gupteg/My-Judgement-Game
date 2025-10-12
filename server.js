@@ -20,8 +20,6 @@ const SUITS = ['Spades', 'Hearts', 'Diamonds', 'Clubs'];
 const RANKS = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
 const RANK_VALUES = { '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8, '9': 9, '10': 10, 'J': 11, 'Q': 12, 'K': 13, 'A': 14 };
 
-// Removed the inefficient setInterval game loop
-
 function startNextTrick() {
     if (!gameState || gameState.isPaused || gameState.phase !== 'TrickReview') return;
 
@@ -133,8 +131,18 @@ function handleGameOver() {
         gameOverCleanupTimer = setTimeout(() => {
             if (gameState) {
                 console.log('Game over state timed out. Resetting to lobby.');
+                // --- FIX START: Rebuild the lobby from the final game state ---
+                const finalPlayers = gameState.players.filter(p => p.status !== 'Removed');
+                players = finalPlayers.map(p => ({
+                    playerId: p.playerId,
+                    socketId: p.socketId,
+                    name: p.name,
+                    isHost: p.isHost,
+                    active: true, // Mark them as active for the new lobby
+                    isReady: p.isHost // Host is auto-ready
+                }));
+                // --- FIX END ---
                 gameState = null;
-                players.forEach(p => { p.isReady = p.isHost; });
                 io.emit('lobbyUpdate', players);
             }
         }, 20000);
@@ -168,7 +176,6 @@ function evaluateTrick() {
     gameState.trickWinnerId = winnerData?.playerId;
     gameState.nextTrickReviewEnd = Date.now() + 10000;
     io.emit('updateGameState', gameState);
-    // Set a one-time timer to start the next trick, replacing the inefficient game loop
     setTimeout(startNextTrick, 10000);
 }
 
@@ -189,8 +196,14 @@ function handlePlayerRemoval(playerId) {
     const activePlayers = gameState.players.filter(p => p.status === 'Active');
     if (activePlayers.length < 2) {
         io.emit('gameLog', 'Not enough players to continue. Returning to lobby.');
+        // --- FIX START: Rebuild the lobby from the final game state before ending ---
+        const finalPlayers = gameState.players.filter(p => p.status !== 'Removed');
+        players = finalPlayers.map(p => ({
+            playerId: p.playerId, socketId: p.socketId, name: p.name,
+            isHost: p.isHost, active: true, isReady: p.isHost
+        }));
+        // --- FIX END ---
         gameState = null;
-        players.forEach(p => { p.isReady = p.isHost; });
         io.emit('lobbyUpdate', players);
         return;
     }
@@ -276,26 +289,22 @@ io.on('connection', (socket) => {
         }
     });
 
-    socket.on('startGame', ({ password }) => { // Expect a password from the client
-    const host = players.find(p => p.socketId === socket.id && p.isHost);
-    if (host) {
-        // Check if a password is required AND if it's correct
-        if (HOST_PASSWORD && password !== HOST_PASSWORD) {
-            // If the password is wrong, send an error message back ONLY to the host
-            socket.emit('announce', 'Incorrect host password.');
-            return; // Stop the function here
+    socket.on('startGame', ({ password }) => {
+        const host = players.find(p => p.socketId === socket.id && p.isHost);
+        if (host) {
+            const HOST_PASSWORD = process.env.HOST_PASSWORD;
+            if (HOST_PASSWORD && password !== HOST_PASSWORD) {
+                return socket.emit('announce', 'Incorrect host password.');
+            }
+            const readyPlayers = players.filter(p => p.isReady && p.active);
+            if (readyPlayers.length >= 2) {
+                gameState = setupGame(readyPlayers);
+                startNewRound();
+            } else {
+                socket.emit('announce', 'Not enough ready players to start the game.');
+            }
         }
-
-        // If we reach here, the password was correct (or not required)
-        const readyPlayers = players.filter(p => p.isReady && p.active);
-        if (readyPlayers.length >= 2) {
-            gameState = setupGame(readyPlayers);
-            startNewRound();
-        } else {
-            socket.emit('announce', 'Not enough ready players to start the game.');
-        }
-    }
-});
+    });
 
     socket.on('startNextRound', () => {
         if (!gameState || gameState.phase !== 'RoundOver') return;
@@ -307,8 +316,6 @@ io.on('connection', (socket) => {
 
     socket.on('endGame', () => {
         let playerIsHost = false;
-        let hostId = null;
-
         if (gameState) {
             const playerInGame = gameState.players.find(p => p.socketId === socket.id);
             if (playerInGame && playerInGame.isHost) {
@@ -318,17 +325,22 @@ io.on('connection', (socket) => {
             const playerInLobby = players.find(p => p.socketId === socket.id);
             if (playerInLobby && playerInLobby.isHost) {
                 playerIsHost = true;
-                hostId = playerInLobby.playerId;
             }
         }
 
         if (playerIsHost) {
             if (gameState) {
+                // --- FIX START: Rebuild the lobby from the final game state ---
+                const finalPlayers = gameState.players.filter(p => p.status !== 'Removed');
+                players = finalPlayers.map(p => ({
+                    playerId: p.playerId, socketId: p.socketId, name: p.name,
+                    isHost: p.isHost, active: true, isReady: p.isHost
+                }));
+                 // --- FIX END ---
                 gameState = null;
-                players.forEach(p => { p.isReady = p.isHost; });
                 io.emit('lobbyUpdate', players);
             } else {
-                const host = players.find(p => p.playerId === hostId);
+                const host = players.find(p => p.socketId === socket.id && p.isHost);
                 players = host ? [host] : [];
                 if (host) host.isReady = true;
                 io.emit('lobbyUpdate', players);
@@ -411,7 +423,6 @@ io.on('connection', (socket) => {
             const disconnectedPlayer = players.find(p => p.socketId === socket.id);
             if (disconnectedPlayer) {
                 disconnectedPlayer.active = false;
-                // FIX: Notify other clients about the lobby player's status change
                 io.emit('lobbyUpdate', players);
             }
         }
@@ -419,5 +430,4 @@ io.on('connection', (socket) => {
 });
 
 const PORT = process.env.PORT || 5000;
-const HOST_PASSWORD = process.env.HOST_PASSWORD; // added by GG
 server.listen(PORT, () => console.log(`✅ Judgment Clubhouse Server is live on port ${PORT}`));

@@ -276,18 +276,26 @@ io.on('connection', (socket) => {
         }
     });
 
-    socket.on('startGame', () => {
-        const host = players.find(p => p.socketId === socket.id && p.isHost);
-        if (host) {
-            const readyPlayers = players.filter(p => p.isReady && p.active);
-            if (readyPlayers.length >= 2) {
-                gameState = setupGame(readyPlayers);
-                startNewRound();
-            } else {
-                socket.emit('announce', 'Not enough ready players to start the game.');
-            }
+    socket.on('startGame', ({ password }) => { // Expect a password from the client
+    const host = players.find(p => p.socketId === socket.id && p.isHost);
+    if (host) {
+        // Check if a password is required AND if it's correct
+        if (HOST_PASSWORD && password !== HOST_PASSWORD) {
+            // If the password is wrong, send an error message back ONLY to the host
+            socket.emit('announce', 'Incorrect host password.');
+            return; // Stop the function here
         }
-    });
+
+        // If we reach here, the password was correct (or not required)
+        const readyPlayers = players.filter(p => p.isReady && p.active);
+        if (readyPlayers.length >= 2) {
+            gameState = setupGame(readyPlayers);
+            startNewRound();
+        } else {
+            socket.emit('announce', 'Not enough ready players to start the game.');
+        }
+    }
+});
 
     socket.on('startNextRound', () => {
         if (!gameState || gameState.phase !== 'RoundOver') return;
@@ -411,4 +419,5 @@ io.on('connection', (socket) => {
 });
 
 const PORT = process.env.PORT || 5000;
+const HOST_PASSWORD = process.env.HOST_PASSWORD; // added by GG
 server.listen(PORT, () => console.log(`✅ Judgment Clubhouse Server is live on port ${PORT}`));

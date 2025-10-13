@@ -65,7 +65,7 @@ function setupGame(lobbyPlayers) {
     return {
         players: gamePlayers, roundNumber: 0, maxRounds: maxCards, dealerIndex: -1, numCardsToDeal: 0,
         trumpSuit: null, leadSuit: null, currentTrick: [], currentWinningPlayerId: null, trickWinnerId: null,
-        lastCompletedTrick: null, // ADDED: To store the previous trick's data
+        lastCompletedTrick: null,
         isPaused: false, pausedForPlayerNames: [], pauseEndTime: null,
         phase: 'Bidding', nextRoundInfo: null, nextTrickReviewEnd: null,
     };
@@ -86,7 +86,7 @@ function startNewRound() {
     const biddingPlayerIndex = findNextActivePlayer(gameState.dealerIndex, gameState.players);
     Object.assign(gameState, {
         currentTrick: [], leadSuit: null, currentWinningPlayerId: null, trickWinnerId: null,
-        lastCompletedTrick: null, // ADDED: Reset last trick on new round
+        lastCompletedTrick: null,
         phase: 'Bidding', nextRoundInfo: null, biddingPlayerIndex: biddingPlayerIndex,
         currentPlayerIndex: null,
     });
@@ -162,7 +162,6 @@ function updateCurrentWinner(gs) {
 }
 
 function evaluateTrick() {
-    // ADDED: Save the just-completed trick before it gets cleared
     gameState.lastCompletedTrick = {
         trick: [...gameState.currentTrick],
         winnerId: gameState.currentWinningPlayerId,
@@ -321,35 +320,34 @@ io.on('connection', (socket) => {
         }
     });
 
+    // This is for "End Game" - returns all players to the lobby
     socket.on('endGame', () => {
-        let playerIsHost = false;
-        if (gameState) {
-            const playerInGame = gameState.players.find(p => p.socketId === socket.id);
-            if (playerInGame && playerInGame.isHost) {
-                playerIsHost = true;
-            }
-        } else {
-            const playerInLobby = players.find(p => p.socketId === socket.id);
-            if (playerInLobby && playerInLobby.isHost) {
-                playerIsHost = true;
-            }
+        const playerInGame = gameState ? gameState.players.find(p => p.socketId === socket.id) : null;
+        if (playerInGame && playerInGame.isHost) {
+            const finalPlayers = gameState.players.filter(p => p.status !== 'Removed');
+            players = finalPlayers.map(p => ({
+                playerId: p.playerId, socketId: p.socketId, name: p.name,
+                isHost: p.isHost, active: true, isReady: p.isHost
+            }));
+            gameState = null;
+            io.emit('lobbyUpdate', players);
         }
+    });
 
-        if (playerIsHost) {
-            if (gameState) {
-                const finalPlayers = gameState.players.filter(p => p.status !== 'Removed');
-                players = finalPlayers.map(p => ({
-                    playerId: p.playerId, socketId: p.socketId, name: p.name,
-                    isHost: p.isHost, active: true, isReady: p.isHost
-                }));
-                gameState = null;
-                io.emit('lobbyUpdate', players);
-            } else {
-                const host = players.find(p => p.socketId === socket.id && p.isHost);
-                players = host ? [host] : [];
-                if (host) host.isReady = true;
-                io.emit('lobbyUpdate', players);
-            }
+    // ADDED: New listener for "End Session" - hard resets for everyone else
+    socket.on('endSession', () => {
+        const host = players.find(p => p.socketId === socket.id && p.isHost);
+        if (host) {
+            // Notify all other players their session has ended
+            players.forEach(p => {
+                if (p.socketId !== host.socketId) {
+                    io.to(p.socketId).emit('forceDisconnect');
+                }
+            });
+            // Reset the lobby to only contain the host
+            players = [host];
+            if (host) host.isReady = true;
+            io.emit('lobbyUpdate', players);
         }
     });
 

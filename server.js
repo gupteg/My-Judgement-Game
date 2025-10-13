@@ -14,11 +14,41 @@ let players = [];
 let gameState = null;
 const reconnectTimers = {};
 const DISCONNECT_GRACE_PERIOD = 60000;
+const TURN_TIMER_DURATION = 90000; // 90 seconds
 let gameOverCleanupTimer = null;
 
 const SUITS = ['Spades', 'Hearts', 'Diamonds', 'Clubs'];
 const RANKS = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
 const RANK_VALUES = { '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8, '9': 9, '10': 10, 'J': 11, 'Q': 12, 'K': 13, 'A': 14 };
+
+function clearTurnTimer() {
+    if (gameState && gameState.turnTimerId) {
+        clearTimeout(gameState.turnTimerId);
+        gameState.turnTimerId = null;
+        gameState.turnEndTime = null;
+    }
+}
+
+function startTurnTimer() {
+    clearTurnTimer();
+    if (!gameState || gameState.isPaused) return;
+
+    const activePlayerIndex = gameState.phase === 'Bidding' ? gameState.biddingPlayerIndex : gameState.currentPlayerIndex;
+    if (activePlayerIndex === null) return;
+    
+    gameState.turnEndTime = Date.now() + TURN_TIMER_DURATION;
+
+    gameState.turnTimerId = setTimeout(() => {
+        if (!gameState) return;
+        const player = gameState.players[activePlayerIndex];
+        if (player) {
+            player.isInactive = true;
+            io.emit('gameLog', `Player ${player.name} is inactive. The host can now remove them.`);
+            clearTurnTimer();
+            io.emit('updateGameState', gameState);
+        }
+    }, TURN_TIMER_DURATION);
+}
 
 function startNextTrick() {
     if (!gameState || gameState.isPaused || gameState.phase !== 'TrickReview') return;
@@ -36,6 +66,7 @@ function startNextTrick() {
     } else {
         gameState.currentPlayerIndex = winnerIndex;
     }
+    startTurnTimer();
     io.emit('updateGameState', gameState);
 }
 
@@ -60,14 +91,14 @@ function setupGame(lobbyPlayers) {
     const gamePlayers = lobbyPlayers.map((p, i) => ({
         playerId: p.playerId, socketId: p.socketId, name: p.name, isHost: p.isHost,
         score: 0, hand: [], bid: null, tricksWon: 0, scoreHistory: [], playOrder: i,
-        status: 'Active',
+        status: 'Active', isInactive: false,
     }));
     return {
         players: gamePlayers, roundNumber: 0, maxRounds: maxCards, dealerIndex: -1, numCardsToDeal: 0,
         trumpSuit: null, leadSuit: null, currentTrick: [], currentWinningPlayerId: null, trickWinnerId: null,
-        lastCompletedTrick: null,
-        isPaused: false, pausedForPlayerNames: [], pauseEndTime: null,
+        lastCompletedTrick: null, isPaused: false, pausedForPlayerNames: [], pauseEndTime: null,
         phase: 'Bidding', nextRoundInfo: null, nextTrickReviewEnd: null,
+        turnTimerId: null, turnEndTime: null,
     };
 }
 
@@ -81,15 +112,15 @@ function startNewRound() {
     let deck = shuffleDeck(createDeck());
     gameState.players.forEach(p => {
         if (p.status === 'Active') { p.hand = deck.splice(0, gameState.numCardsToDeal); }
-        p.bid = null; p.tricksWon = 0;
+        p.bid = null; p.tricksWon = 0; p.isInactive = false;
     });
     const biddingPlayerIndex = findNextActivePlayer(gameState.dealerIndex, gameState.players);
     Object.assign(gameState, {
         currentTrick: [], leadSuit: null, currentWinningPlayerId: null, trickWinnerId: null,
-        lastCompletedTrick: null,
-        phase: 'Bidding', nextRoundInfo: null, biddingPlayerIndex: biddingPlayerIndex,
-        currentPlayerIndex: null,
+        lastCompletedTrick: null, phase: 'Bidding', nextRoundInfo: null, 
+        biddingPlayerIndex: biddingPlayerIndex, currentPlayerIndex: null,
     });
+    startTurnTimer();
     io.emit('gameLog', `Round ${gameState.roundNumber} begins. Cards: ${gameState.numCardsToDeal}. Trump: ${gameState.trumpSuit}.`);
     io.emit('updateGameState', gameState);
     const firstBidder = gameState.players[biddingPlayerIndex];
@@ -97,6 +128,7 @@ function startNewRound() {
 }
 
 function handleEndOfRound() {
+    clearTurnTimer();
     gameState.players.forEach(p => {
         if (p.status !== 'Active') { p.scoreHistory.push(null); return; }
         let roundScore = (p.tricksWon === p.bid) ? (10 + p.bid) : (p.bid * -1);
@@ -120,6 +152,7 @@ function handleEndOfRound() {
 }
 
 function handleGameOver() {
+    clearTurnTimer();
     if (gameState && gameState.phase !== 'GameOver') {
         gameState.phase = 'GameOver';
         Object.values(reconnectTimers).forEach(clearTimeout);
@@ -135,12 +168,8 @@ function handleGameOver() {
                 console.log('Game over state timed out. Resetting to lobby.');
                 const finalPlayers = gameState.players.filter(p => p.status !== 'Removed');
                 players = finalPlayers.map(p => ({
-                    playerId: p.playerId,
-                    socketId: p.socketId,
-                    name: p.name,
-                    isHost: p.isHost,
-                    active: true,
-                    isReady: p.isHost
+                    playerId: p.playerId, socketId: p.socketId, name: p.name,
+                    isHost: p.isHost, active: true, isReady: p.isHost
                 }));
                 gameState = null;
                 io.emit('lobbyUpdate', players);
@@ -162,24 +191,22 @@ function updateCurrentWinner(gs) {
 }
 
 function evaluateTrick() {
+    clearTurnTimer();
     gameState.lastCompletedTrick = {
         trick: [...gameState.currentTrick],
         winnerId: gameState.currentWinningPlayerId,
     };
-
     const winnerData = gameState.players.find(p => p.playerId === gameState.currentWinningPlayerId);
     if (winnerData) {
         winnerData.tricksWon++;
         io.emit('trickWon', { winnerName: winnerData.name });
     }
-
     const allHandsEmpty = gameState.players.filter(p => p.status === 'Active').every(p => p.hand.length === 0);
     if (allHandsEmpty) {
         io.emit('updateGameState', gameState);
         setTimeout(handleEndOfRound, 3000);
         return;
     }
-
     gameState.phase = 'TrickReview';
     gameState.trickWinnerId = winnerData?.playerId;
     gameState.nextTrickReviewEnd = Date.now() + 10000;
@@ -187,13 +214,20 @@ function evaluateTrick() {
     setTimeout(startNextTrick, 10000);
 }
 
-function handlePlayerRemoval(playerId) {
+function handleGenericPlayerRemoval(playerId, removalType = "reconnect") {
     if (!gameState) return;
     const player = gameState.players.find(p => p.playerId === playerId);
-    if (!player || player.status !== 'Disconnected') return;
+    if (!player) return;
+    
     player.status = 'Removed';
-    io.emit('gameLog', `Player ${player.name} failed to reconnect and has been removed.`);
-    delete reconnectTimers[playerId];
+    const logMessage = removalType === 'kick' ? `Player ${player.name} was removed by the host for inactivity.` : `Player ${player.name} failed to reconnect and has been removed.`;
+    io.emit('gameLog', logMessage);
+    
+    if (reconnectTimers[playerId]) {
+        clearTimeout(reconnectTimers[playerId]);
+        delete reconnectTimers[playerId];
+    }
+    
     if (player.isHost) {
         const nextHost = gameState.players.find(p => p.status === 'Active');
         if (nextHost) {
@@ -201,6 +235,7 @@ function handlePlayerRemoval(playerId) {
             io.emit('gameLog', `Host privileges transferred to ${nextHost.name}.`);
         }
     }
+    
     const activePlayers = gameState.players.filter(p => p.status === 'Active');
     if (activePlayers.length < 2) {
         io.emit('gameLog', 'Not enough players to continue. Returning to lobby.');
@@ -210,26 +245,40 @@ function handlePlayerRemoval(playerId) {
             isHost: p.isHost, active: true, isReady: p.isHost
         }));
         gameState = null;
+        clearTurnTimer();
         io.emit('lobbyUpdate', players);
         return;
     }
+    
+    const wasBiddingPlayer = gameState.phase === 'Bidding' && gameState.players[gameState.biddingPlayerIndex]?.playerId === playerId;
+    const wasPlayingPlayer = gameState.phase === 'Playing' && gameState.players[gameState.currentPlayerIndex]?.playerId === playerId;
+    
     const stillDisconnected = gameState.players.some(p => p.status === 'Disconnected');
-    if (!stillDisconnected) {
+    if (!stillDisconnected && gameState.isPaused) {
         gameState.isPaused = false;
         gameState.pausedForPlayerNames = [];
         gameState.pauseEndTime = null;
+        // If the game was paused for the player who was just removed, resume timer for next player.
+        if (wasBiddingPlayer || wasPlayingPlayer) {
+             startTurnTimer();
+        }
     } else {
         gameState.pausedForPlayerNames = gameState.players.filter(p => p.status === 'Disconnected').map(p => p.name);
     }
-    const biddingPlayer = gameState.players[gameState.biddingPlayerIndex];
-    if (gameState.phase === 'Bidding' && biddingPlayer?.playerId === playerId) {
-        const nextBidderIndex = findNextActivePlayer(gameState.biddingPlayerIndex, gameState.players);
+    
+    if (wasBiddingPlayer) {
+        const nextBidderIndex = findNextActivePlayer(gameState.biddingPlayerIndex, gameState.players, false);
         gameState.biddingPlayerIndex = nextBidderIndex;
         const nextBidder = gameState.players[nextBidderIndex];
-        if (nextBidder) io.to(nextBidder.socketId).emit('promptForBid', { maxBid: gameState.numCardsToDeal });
-    } else if (gameState.phase === 'Playing' && gameState.players[gameState.currentPlayerIndex]?.playerId === playerId) {
-        gameState.currentPlayerIndex = findNextActivePlayer(gameState.currentPlayerIndex, gameState.players);
+        if (nextBidder) {
+            io.to(nextBidder.socketId).emit('promptForBid', { maxBid: gameState.numCardsToDeal });
+            startTurnTimer();
+        }
+    } else if (wasPlayingPlayer) {
+        gameState.currentPlayerIndex = findNextActivePlayer(gameState.currentPlayerIndex, gameState.players, false);
+        startTurnTimer();
     }
+    
     io.emit('updateGameState', gameState);
 }
 
@@ -250,6 +299,8 @@ io.on('connection', (socket) => {
                     gameState.isPaused = false;
                     gameState.pauseEndTime = null;
                     gameState.pausedForPlayerNames = [];
+                    // Resume turn timer if it was paused
+                    startTurnTimer();
                 } else {
                     gameState.pausedForPlayerNames = stillDisconnected.map(p => p.name);
                 }
@@ -320,7 +371,6 @@ io.on('connection', (socket) => {
         }
     });
 
-    // This is for "End Game" - returns all players to the lobby
     socket.on('endGame', () => {
         const playerInGame = gameState ? gameState.players.find(p => p.socketId === socket.id) : null;
         if (playerInGame && playerInGame.isHost) {
@@ -330,21 +380,19 @@ io.on('connection', (socket) => {
                 isHost: p.isHost, active: true, isReady: p.isHost
             }));
             gameState = null;
+            clearTurnTimer();
             io.emit('lobbyUpdate', players);
         }
     });
 
-    // ADDED: New listener for "End Session" - hard resets for everyone else
     socket.on('endSession', () => {
         const host = players.find(p => p.socketId === socket.id && p.isHost);
         if (host) {
-            // Notify all other players their session has ended
             players.forEach(p => {
                 if (p.socketId !== host.socketId) {
                     io.to(p.socketId).emit('forceDisconnect');
                 }
             });
-            // Reset the lobby to only contain the host
             players = [host];
             if (host) host.isReady = true;
             io.emit('lobbyUpdate', players);
@@ -355,12 +403,17 @@ io.on('connection', (socket) => {
         if (!gameState || gameState.phase !== 'Bidding' || gameState.isPaused) return;
         const player = gameState.players[gameState.biddingPlayerIndex];
         if (!player || player.socketId !== socket.id) return;
+        
+        clearTurnTimer();
+        player.isInactive = false;
+
         const proposedBid = parseInt(bid);
         if (isNaN(proposedBid)) return;
         const isLastBidder = findNextActivePlayer(gameState.biddingPlayerIndex, gameState.players) === findNextActivePlayer(gameState.dealerIndex, gameState.players);
         if (isLastBidder) {
             const bidsSoFar = gameState.players.reduce((acc, p) => acc + (p.bid || 0), 0);
             if ((bidsSoFar + proposedBid) === gameState.numCardsToDeal) {
+                startTurnTimer(); // Restart timer for the same player
                 return socket.emit('invalidBid', { message: `Total bid cannot be ${gameState.numCardsToDeal}. Please bid again.` });
             }
         }
@@ -377,6 +430,7 @@ io.on('connection', (socket) => {
             const nextBidder = gameState.players[nextBidderIndex];
             if (nextBidder) io.to(nextBidder.socketId).emit('promptForBid', { maxBid: gameState.numCardsToDeal });
         }
+        startTurnTimer();
         io.emit('updateGameState', gameState);
     });
 
@@ -384,13 +438,19 @@ io.on('connection', (socket) => {
         if (!gameState || gameState.phase !== 'Playing' || gameState.isPaused) return;
         const player = gameState.players[gameState.currentPlayerIndex];
         if (!player || player.socketId !== socket.id) return;
+        
         const cardInHandIndex = player.hand.findIndex(c => c.suit === card.suit && c.rank === card.rank);
         if (cardInHandIndex === -1) return;
         if (gameState.leadSuit) {
             if (player.hand.some(c => c.suit === gameState.leadSuit) && card.suit !== gameState.leadSuit) {
                 return socket.emit('announce', `You must play a ${gameState.leadSuit} card.`);
             }
-        } else { gameState.leadSuit = card.suit; }
+        }
+        
+        clearTurnTimer();
+        player.isInactive = false;
+        
+        if (!gameState.leadSuit) { gameState.leadSuit = card.suit; }
         player.hand.splice(cardInHandIndex, 1);
         gameState.currentTrick.push({ playerId: player.playerId, name: player.name, card });
         updateCurrentWinner(gameState);
@@ -399,9 +459,19 @@ io.on('connection', (socket) => {
         const activePlayersCount = gameState.players.filter(p => p.status === 'Active').length;
         if (gameState.currentTrick.length < activePlayersCount) {
             gameState.currentPlayerIndex = findNextActivePlayer(gameState.currentPlayerIndex, gameState.players);
+            startTurnTimer();
             io.emit('updateGameState', gameState);
         } else {
             evaluateTrick();
+        }
+    });
+
+    socket.on('hostKickPlayer', ({ playerIdToKick }) => {
+        if (!gameState) return;
+        const host = gameState.players.find(p => p.socketId === socket.id && p.isHost);
+        const playerToKick = gameState.players.find(p => p.playerId === playerIdToKick);
+        if (host && playerToKick && playerToKick.isInactive) {
+            handleGenericPlayerRemoval(playerIdToKick, 'kick');
         }
     });
 
@@ -414,11 +484,12 @@ io.on('connection', (socket) => {
                 playerInGame.status = 'Disconnected';
                 io.emit('gameLog', `Player ${playerInGame.name} has disconnected. The game is paused.`);
                 gameState.isPaused = true;
+                clearTurnTimer();
                 gameState.pausedForPlayerNames = gameState.players.filter(p => p.status === 'Disconnected').map(p => p.name);
                 gameState.pauseEndTime = Date.now() + DISCONNECT_GRACE_PERIOD;
                 if (reconnectTimers[playerInGame.playerId]) clearTimeout(reconnectTimers[playerInGame.playerId]);
                 reconnectTimers[playerInGame.playerId] = setTimeout(() => {
-                    handlePlayerRemoval(playerInGame.playerId);
+                    handleGenericPlayerRemoval(playerInGame.playerId, 'reconnect');
                 }, DISCONNECT_GRACE_PERIOD);
                 io.emit('updateGameState', gameState);
             }

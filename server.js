@@ -65,6 +65,7 @@ function setupGame(lobbyPlayers) {
     return {
         players: gamePlayers, roundNumber: 0, maxRounds: maxCards, dealerIndex: -1, numCardsToDeal: 0,
         trumpSuit: null, leadSuit: null, currentTrick: [], currentWinningPlayerId: null, trickWinnerId: null,
+        lastCompletedTrick: null, // ADDED: To store the previous trick's data
         isPaused: false, pausedForPlayerNames: [], pauseEndTime: null,
         phase: 'Bidding', nextRoundInfo: null, nextTrickReviewEnd: null,
     };
@@ -85,6 +86,7 @@ function startNewRound() {
     const biddingPlayerIndex = findNextActivePlayer(gameState.dealerIndex, gameState.players);
     Object.assign(gameState, {
         currentTrick: [], leadSuit: null, currentWinningPlayerId: null, trickWinnerId: null,
+        lastCompletedTrick: null, // ADDED: Reset last trick on new round
         phase: 'Bidding', nextRoundInfo: null, biddingPlayerIndex: biddingPlayerIndex,
         currentPlayerIndex: null,
     });
@@ -160,18 +162,25 @@ function updateCurrentWinner(gs) {
 }
 
 function evaluateTrick() {
+    // ADDED: Save the just-completed trick before it gets cleared
+    gameState.lastCompletedTrick = {
+        trick: [...gameState.currentTrick],
+        winnerId: gameState.currentWinningPlayerId,
+    };
+
     const winnerData = gameState.players.find(p => p.playerId === gameState.currentWinningPlayerId);
     if (winnerData) {
         winnerData.tricksWon++;
         io.emit('trickWon', { winnerName: winnerData.name });
     }
+
     const allHandsEmpty = gameState.players.filter(p => p.status === 'Active').every(p => p.hand.length === 0);
     if (allHandsEmpty) {
-        // FIX: Emit final state so clients can see the last trick won before the scoreboard.
         io.emit('updateGameState', gameState);
         setTimeout(handleEndOfRound, 3000);
         return;
     }
+
     gameState.phase = 'TrickReview';
     gameState.trickWinnerId = winnerData?.playerId;
     gameState.nextTrickReviewEnd = Date.now() + 10000;

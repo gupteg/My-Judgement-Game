@@ -33,7 +33,6 @@ window.addEventListener('DOMContentLoaded', () => {
         document.getElementById('lobby-screen').style.display = 'none';
         document.getElementById('game-board').style.display = 'flex';
 
-        // FIX: Only set initial scroll position once to prevent snapping
         if (isInitialGameRender) {
             const scrollContainer = document.getElementById('mobile-scroll-container');
             scrollContainer.scrollTo({ left: scrollContainer.offsetWidth, behavior: 'auto' });
@@ -212,6 +211,8 @@ window.addEventListener('DOMContentLoaded', () => {
     socket.on('lobbyUpdate', (players) => {
         if (lobbyReturnInterval) clearInterval(lobbyReturnInterval);
         document.getElementById('scoreboard-modal').style.display = 'none';
+        // FIX: Clear game log when returning to lobby
+        document.getElementById('game-log-list').innerHTML = '';
         isInitialGameRender = true; // Reset scroll flag when returning to lobby
         renderLobby(players);
     });
@@ -425,7 +426,10 @@ window.addEventListener('DOMContentLoaded', () => {
             case 'TrickReview':
                 const updateTrickTimer = () => {
                     const remaining = Math.max(0, Math.round((gs.nextTrickReviewEnd - Date.now()) / 1000));
-                    banner.innerHTML = `Next trick starts in ${remaining}s`;
+                    // FIX: Add next player's name to the banner
+                    const trickWinner = gs.players.find(p => p.playerId === gs.trickWinnerId);
+                    const winnerName = trickWinner ? trickWinner.name : '...';
+                    banner.innerHTML = `Next trick starts by <strong>${winnerName}</strong> in ${remaining}s`;
                     if (remaining <= 0) clearInterval(trickReviewInterval);
                 };
                 updateTrickTimer();

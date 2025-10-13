@@ -250,8 +250,8 @@ function handleGenericPlayerRemoval(playerId, removalType = "reconnect") {
         return;
     }
     
-    const wasBiddingPlayer = gameState.phase === 'Bidding' && gameState.players[gameState.biddingPlayerIndex]?.playerId === playerId;
-    const wasPlayingPlayer = gameState.phase === 'Playing' && gameState.players[gameState.currentPlayerIndex]?.playerId === playerId;
+    const wasBiddingPlayer = gameState.phase === 'Bidding' && gameState.biddingPlayerIndex !== null && gameState.players[gameState.biddingPlayerIndex]?.playerId === playerId;
+    const wasPlayingPlayer = gameState.phase === 'Playing' && gameState.currentPlayerIndex !== null && gameState.players[gameState.currentPlayerIndex]?.playerId === playerId;
     
     const stillDisconnected = gameState.players.some(p => p.status === 'Disconnected');
     if (!stillDisconnected && gameState.isPaused) {
@@ -265,7 +265,6 @@ function handleGenericPlayerRemoval(playerId, removalType = "reconnect") {
         gameState.pausedForPlayerNames = gameState.players.filter(p => p.status === 'Disconnected').map(p => p.name);
     }
     
-    // FIX: Add checks to prevent crash if findNextActivePlayer returns null
     if (wasBiddingPlayer) {
         const nextBidderIndex = findNextActivePlayer(gameState.biddingPlayerIndex, gameState.players, false);
         gameState.biddingPlayerIndex = nextBidderIndex;

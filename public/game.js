@@ -141,11 +141,12 @@ window.addEventListener('DOMContentLoaded', () => {
 
     function setupLobbyListeners() {
         document.getElementById('start-game-btn').addEventListener('click', () => {
-    const password = document.getElementById('host-password-input').value;
-    socket.emit('startGame', { password: password }); // Send the password object
-});
+            const password = document.getElementById('host-password-input').value;
+            socket.emit('startGame', { password: password });
+        });
         document.getElementById('ready-btn').addEventListener('click', () => socket.emit('setPlayerReady'));
-        document.getElementById('end-session-btn').addEventListener('click', () => socket.emit('endGame'));
+        // MODIFIED: "End Session" button now emits a different event
+        document.getElementById('end-session-btn').addEventListener('click', () => socket.emit('endSession'));
     }
 
     function setupDynamicEventListeners() {
@@ -193,7 +194,6 @@ window.addEventListener('DOMContentLoaded', () => {
             document.getElementById('scoreboard-modal').style.display = 'none';
         });
 
-        // ADDED: Event listeners for the new "Last Trick" modal
         const lastTrickModal = document.getElementById('last-trick-modal');
         document.getElementById('view-last-trick-btn').addEventListener('click', () => renderLastTrickModal(window.gameState));
         document.getElementById('close-last-trick-modal').addEventListener('click', () => lastTrickModal.classList.add('hidden'));
@@ -224,6 +224,13 @@ window.addEventListener('DOMContentLoaded', () => {
         document.getElementById('game-log-list').innerHTML = '';
         isInitialGameRender = true;
         renderLobby(players);
+    });
+
+    // ADDED: Listener to handle forced disconnection by the host
+    socket.on('forceDisconnect', () => {
+        sessionStorage.removeItem('judgmentPlayerId');
+        sessionStorage.removeItem('judgmentPlayerName');
+        location.reload();
     });
 
     function launchConfetti() {
@@ -292,17 +299,10 @@ window.addEventListener('DOMContentLoaded', () => {
     socket.on('gameLog', (message) => addMessageToGameLog(message));
 
     function renderLobby(players) {
-        if (players.length === 0) {
-            return location.reload();
-        }
-        document.getElementById('join-screen').style.display = 'none';
-        document.getElementById('game-board').style.display = 'none';
-        const lobbyScreen = document.getElementById('lobby-screen');
-        lobbyScreen.style.display = 'block';
-        const playerList = document.getElementById('player-list');
-        playerList.innerHTML = '';
         const me = players.find(p => p.playerId === myPersistentPlayerId);
         if (!me) { 
+             // This can happen if the host ends the session and this client is not the host.
+             // The 'forceDisconnect' event should handle this, but this is a fallback.
              if (sessionStorage.getItem('judgmentPlayerId')) {
                 sessionStorage.removeItem('judgmentPlayerId');
                 sessionStorage.removeItem('judgmentPlayerName');
@@ -310,6 +310,13 @@ window.addEventListener('DOMContentLoaded', () => {
              }
              return;
         }
+
+        document.getElementById('join-screen').style.display = 'none';
+        document.getElementById('game-board').style.display = 'none';
+        const lobbyScreen = document.getElementById('lobby-screen');
+        lobbyScreen.style.display = 'block';
+        const playerList = document.getElementById('player-list');
+        playerList.innerHTML = '';
 
         const readyBtn = document.getElementById('ready-btn');
         readyBtn.textContent = 'Ready';
@@ -409,7 +416,6 @@ window.addEventListener('DOMContentLoaded', () => {
         document.getElementById('trump-info-panel').innerHTML = `<h4>Trump</h4><div class="trump-display">${getSuitSymbol(gs.trumpSuit, true)}<span class="trump-text">${gs.trumpSuit}</span></div>`; 
         document.getElementById('lead-suit-info-panel').innerHTML = `<h4>Lead Suit</h4>` + (gs.leadSuit ? getSuitSymbol(gs.leadSuit, true) : '---'); 
 
-        // ADDED: Control visibility of the "View Last Trick" button
         const viewLastTrickBtn = document.getElementById('view-last-trick-btn');
         if (gs.lastCompletedTrick) {
             viewLastTrickBtn.style.display = 'block';
@@ -471,7 +477,6 @@ window.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // ADDED: Function to render the content of the "Last Trick" modal
     function renderLastTrickModal(gs) {
         const lastTrickData = gs.lastCompletedTrick;
         if (!lastTrickData) return;

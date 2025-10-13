@@ -83,7 +83,6 @@ button:disabled { background-color: #555; border-color: #777; cursor: not-allowe
 #trump-info-panel .no-trump { font-size: 1.5em; font-weight: bold; }
 #lead-suit-info-panel { min-height: 118px; }
 
-/* ADDED: Styling for the "View Last Trick" button */
 #view-last-trick-btn {
     width: 100%;
     box-sizing: border-box;
@@ -124,7 +123,7 @@ button:disabled { background-color: #555; border-color: #777; cursor: not-allowe
 
 .hidden { display: none !important; }
 
-/* ADDED: Styling for Last Trick Modal */
+/* Styling for Last Trick Modal */
 #last-trick-modal .modal-content {
     max-width: 450px;
 }
@@ -146,6 +145,9 @@ button:disabled { background-color: #555; border-color: #777; cursor: not-allowe
     flex-direction: column;
     gap: 10px;
     margin-top: 20px;
+    /* ADDED: Makes the list scrollable if it gets too long */
+    max-height: 350px;
+    overflow-y: auto;
 }
 .last-trick-row {
     display: flex;

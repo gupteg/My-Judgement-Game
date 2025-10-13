@@ -131,17 +131,15 @@ function handleGameOver() {
         gameOverCleanupTimer = setTimeout(() => {
             if (gameState) {
                 console.log('Game over state timed out. Resetting to lobby.');
-                // --- FIX START: Rebuild the lobby from the final game state ---
                 const finalPlayers = gameState.players.filter(p => p.status !== 'Removed');
                 players = finalPlayers.map(p => ({
                     playerId: p.playerId,
                     socketId: p.socketId,
                     name: p.name,
                     isHost: p.isHost,
-                    active: true, // Mark them as active for the new lobby
-                    isReady: p.isHost // Host is auto-ready
+                    active: true,
+                    isReady: p.isHost
                 }));
-                // --- FIX END ---
                 gameState = null;
                 io.emit('lobbyUpdate', players);
             }
@@ -169,6 +167,8 @@ function evaluateTrick() {
     }
     const allHandsEmpty = gameState.players.filter(p => p.status === 'Active').every(p => p.hand.length === 0);
     if (allHandsEmpty) {
+        // FIX: Emit final state so clients can see the last trick won before the scoreboard.
+        io.emit('updateGameState', gameState);
         setTimeout(handleEndOfRound, 3000);
         return;
     }
@@ -196,13 +196,11 @@ function handlePlayerRemoval(playerId) {
     const activePlayers = gameState.players.filter(p => p.status === 'Active');
     if (activePlayers.length < 2) {
         io.emit('gameLog', 'Not enough players to continue. Returning to lobby.');
-        // --- FIX START: Rebuild the lobby from the final game state before ending ---
         const finalPlayers = gameState.players.filter(p => p.status !== 'Removed');
         players = finalPlayers.map(p => ({
             playerId: p.playerId, socketId: p.socketId, name: p.name,
             isHost: p.isHost, active: true, isReady: p.isHost
         }));
-        // --- FIX END ---
         gameState = null;
         io.emit('lobbyUpdate', players);
         return;
@@ -330,13 +328,11 @@ io.on('connection', (socket) => {
 
         if (playerIsHost) {
             if (gameState) {
-                // --- FIX START: Rebuild the lobby from the final game state ---
                 const finalPlayers = gameState.players.filter(p => p.status !== 'Removed');
                 players = finalPlayers.map(p => ({
                     playerId: p.playerId, socketId: p.socketId, name: p.name,
                     isHost: p.isHost, active: true, isReady: p.isHost
                 }));
-                 // --- FIX END ---
                 gameState = null;
                 io.emit('lobbyUpdate', players);
             } else {

@@ -258,7 +258,6 @@ function handleGenericPlayerRemoval(playerId, removalType = "reconnect") {
         gameState.isPaused = false;
         gameState.pausedForPlayerNames = [];
         gameState.pauseEndTime = null;
-        // If the game was paused for the player who was just removed, resume timer for next player.
         if (wasBiddingPlayer || wasPlayingPlayer) {
              startTurnTimer();
         }
@@ -266,17 +265,20 @@ function handleGenericPlayerRemoval(playerId, removalType = "reconnect") {
         gameState.pausedForPlayerNames = gameState.players.filter(p => p.status === 'Disconnected').map(p => p.name);
     }
     
+    // FIX: Add checks to prevent crash if findNextActivePlayer returns null
     if (wasBiddingPlayer) {
         const nextBidderIndex = findNextActivePlayer(gameState.biddingPlayerIndex, gameState.players, false);
         gameState.biddingPlayerIndex = nextBidderIndex;
-        const nextBidder = gameState.players[nextBidderIndex];
-        if (nextBidder) {
+        if (nextBidderIndex !== null) {
+            const nextBidder = gameState.players[nextBidderIndex];
             io.to(nextBidder.socketId).emit('promptForBid', { maxBid: gameState.numCardsToDeal });
             startTurnTimer();
         }
     } else if (wasPlayingPlayer) {
         gameState.currentPlayerIndex = findNextActivePlayer(gameState.currentPlayerIndex, gameState.players, false);
-        startTurnTimer();
+        if (gameState.currentPlayerIndex !== null) {
+            startTurnTimer();
+        }
     }
     
     io.emit('updateGameState', gameState);
@@ -299,7 +301,6 @@ io.on('connection', (socket) => {
                     gameState.isPaused = false;
                     gameState.pauseEndTime = null;
                     gameState.pausedForPlayerNames = [];
-                    // Resume turn timer if it was paused
                     startTurnTimer();
                 } else {
                     gameState.pausedForPlayerNames = stillDisconnected.map(p => p.name);
@@ -413,7 +414,7 @@ io.on('connection', (socket) => {
         if (isLastBidder) {
             const bidsSoFar = gameState.players.reduce((acc, p) => acc + (p.bid || 0), 0);
             if ((bidsSoFar + proposedBid) === gameState.numCardsToDeal) {
-                startTurnTimer(); // Restart timer for the same player
+                startTurnTimer();
                 return socket.emit('invalidBid', { message: `Total bid cannot be ${gameState.numCardsToDeal}. Please bid again.` });
             }
         }

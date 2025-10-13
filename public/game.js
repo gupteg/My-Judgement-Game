@@ -192,6 +192,16 @@ window.addEventListener('DOMContentLoaded', () => {
         document.getElementById('player-ok-btn').addEventListener('click', () => {
             document.getElementById('scoreboard-modal').style.display = 'none';
         });
+
+        // ADDED: Event listeners for the new "Last Trick" modal
+        const lastTrickModal = document.getElementById('last-trick-modal');
+        document.getElementById('view-last-trick-btn').addEventListener('click', () => renderLastTrickModal(window.gameState));
+        document.getElementById('close-last-trick-modal').addEventListener('click', () => lastTrickModal.classList.add('hidden'));
+        lastTrickModal.addEventListener('click', (e) => {
+            if (e.target.id === 'last-trick-modal') {
+                lastTrickModal.classList.add('hidden');
+            }
+        });
     }
 
     socket.on('promptForBid', ({ maxBid }) => { const actionBanner = document.getElementById('action-banner'); const bidInput = document.getElementById('bid-input'); document.getElementById('action-banner-text').textContent = 'Your turn to BID!'; document.getElementById('action-banner-input-area').style.display = 'flex'; actionBanner.style.display = 'block'; bidInput.innerHTML = ''; for (let i = 0; i <= maxBid; i++) { const option = document.createElement('option'); option.value = i; option.textContent = i; bidInput.appendChild(option); } });
@@ -211,9 +221,8 @@ window.addEventListener('DOMContentLoaded', () => {
     socket.on('lobbyUpdate', (players) => {
         if (lobbyReturnInterval) clearInterval(lobbyReturnInterval);
         document.getElementById('scoreboard-modal').style.display = 'none';
-        // FIX: Clear game log when returning to lobby
         document.getElementById('game-log-list').innerHTML = '';
-        isInitialGameRender = true; // Reset scroll flag when returning to lobby
+        isInitialGameRender = true;
         renderLobby(players);
     });
 
@@ -391,7 +400,24 @@ window.addEventListener('DOMContentLoaded', () => {
     }
 
     function renderCenterColumn(gs) { const slotsContainer = document.getElementById('player-slots-container'); slotsContainer.innerHTML = ''; const playerOrder = getFixedPlayerOrder(gs.players, gs.dealerIndex); playerOrder.forEach(player => { slotsContainer.appendChild(createPlayerSlot(player, gs)); }); }
-    function renderRightColumn(gs) { document.getElementById('round-title-board').innerHTML = `Round ${gs.roundNumber}`; document.getElementById('cards-dealt-board').innerHTML = `<div class="label">Cards Dealt</div><div class="value">${gs.numCardsToDeal}</div>`; const currentBidTotal = gs.players.reduce((sum, p) => p.bid !== null ? sum + p.bid : sum, 0); document.getElementById('total-bids-board').innerHTML = `<div class="label">Total Bids</div><div class="value">${currentBidTotal}</div>`; document.getElementById('trump-info-panel').innerHTML = `<h4>Trump</h4><div class="trump-display">${getSuitSymbol(gs.trumpSuit, true)}<span class="trump-text">${gs.trumpSuit}</span></div>`; document.getElementById('lead-suit-info-panel').innerHTML = `<h4>Lead Suit</h4>` + (gs.leadSuit ? getSuitSymbol(gs.leadSuit, true) : '---'); }
+    
+    function renderRightColumn(gs) { 
+        document.getElementById('round-title-board').innerHTML = `Round ${gs.roundNumber}`; 
+        document.getElementById('cards-dealt-board').innerHTML = `<div class="label">Cards Dealt</div><div class="value">${gs.numCardsToDeal}</div>`; 
+        const currentBidTotal = gs.players.reduce((sum, p) => p.bid !== null ? sum + p.bid : sum, 0); 
+        document.getElementById('total-bids-board').innerHTML = `<div class="label">Total Bids</div><div class="value">${currentBidTotal}</div>`; 
+        document.getElementById('trump-info-panel').innerHTML = `<h4>Trump</h4><div class="trump-display">${getSuitSymbol(gs.trumpSuit, true)}<span class="trump-text">${gs.trumpSuit}</span></div>`; 
+        document.getElementById('lead-suit-info-panel').innerHTML = `<h4>Lead Suit</h4>` + (gs.leadSuit ? getSuitSymbol(gs.leadSuit, true) : '---'); 
+
+        // ADDED: Control visibility of the "View Last Trick" button
+        const viewLastTrickBtn = document.getElementById('view-last-trick-btn');
+        if (gs.lastCompletedTrick) {
+            viewLastTrickBtn.style.display = 'block';
+        } else {
+            viewLastTrickBtn.style.display = 'none';
+        }
+    }
+
     function renderScoreboard(gs) { const container = document.getElementById('scoreboard-table-container'); container.innerHTML = ''; const table = document.createElement('table'); table.className = 'score-table'; let headerHtml = '<thead><tr><th>Round Details</th>'; gs.players.forEach(p => headerHtml += `<th>${p.name}</th>`); headerHtml += '</tr></thead>'; let bodyHtml = '<tbody>'; for (let i = 0; i < gs.roundNumber; i++) { const round = i + 1; const cardsDealt = gs.maxRounds - i; const trumpCycle = ['Spades', 'Hearts', 'Diamonds', 'Clubs', 'No Trump']; const trump = trumpCycle[i % 5]; bodyHtml += `<tr><td>R${round} (${cardsDealt} cards, ${getSuitSymbol(trump)})</td>`; gs.players.forEach(p => { const score = p.scoreHistory[i]; if (score === null) { bodyHtml += `<td>—</td>`; } else if (score !== undefined) { const isCorrect = score > 0; bodyHtml += `<td class="${isCorrect ? 'correct-bid' : 'incorrect-bid'}">${score > 0 ? '+' : ''}${score}</td>`; } else { bodyHtml += `<td>-</td>`; } }); bodyHtml += '</tr>'; } bodyHtml += '</tbody>'; let footerHtml = '<tfoot><tr><td><strong>Total</strong></td>'; gs.players.forEach(p => footerHtml += `<td><strong>${p.score}</strong></td>`); footerHtml += '</tr></tfoot>'; table.innerHTML = headerHtml + bodyHtml + footerHtml; container.appendChild(table); }
 
     function updateGameStatusBanner(gs) {
@@ -426,7 +452,6 @@ window.addEventListener('DOMContentLoaded', () => {
             case 'TrickReview':
                 const updateTrickTimer = () => {
                     const remaining = Math.max(0, Math.round((gs.nextTrickReviewEnd - Date.now()) / 1000));
-                    // FIX: Add next player's name to the banner
                     const trickWinner = gs.players.find(p => p.playerId === gs.trickWinnerId);
                     const winnerName = trickWinner ? trickWinner.name : '...';
                     banner.innerHTML = `Next trick starts by <strong>${winnerName}</strong> in ${remaining}s`;
@@ -444,6 +469,38 @@ window.addEventListener('DOMContentLoaded', () => {
             default:
                 banner.innerHTML = '';
         }
+    }
+
+    // ADDED: Function to render the content of the "Last Trick" modal
+    function renderLastTrickModal(gs) {
+        const lastTrickData = gs.lastCompletedTrick;
+        if (!lastTrickData) return;
+        
+        const detailsContainer = document.getElementById('last-trick-details');
+        const modal = document.getElementById('last-trick-modal');
+        detailsContainer.innerHTML = '';
+
+        lastTrickData.trick.forEach(play => {
+            const row = document.createElement('div');
+            row.className = 'last-trick-row';
+            
+            const nameEl = document.createElement('span');
+            nameEl.className = 'player-name';
+            nameEl.textContent = play.name;
+            
+            if (play.playerId === lastTrickData.winnerId) {
+                row.classList.add('winner');
+                nameEl.textContent += ' 🏆';
+            }
+            
+            const cardEl = createCardElement(play.card);
+            
+            row.appendChild(nameEl);
+            row.appendChild(cardEl);
+            detailsContainer.appendChild(row);
+        });
+        
+        modal.classList.remove('hidden');
     }
 
     function createPlayerSlot(player, gs) {

@@ -35,6 +35,14 @@
         <div id="winner-celebration-overlay" class="hidden"></div>
         <div id="page-indicator"></div>
 
+        <div id="last-trick-modal" class="modal hidden">
+            <div class="modal-content">
+                <span class="close-btn" id="close-last-trick-modal">&times;</span>
+                <h2>Previous Trick</h2>
+                <div id="last-trick-details"></div>
+            </div>
+        </div>
+
         <div id="mobile-scroll-container">
             <div id="left-column">
                 <div id="toast-notification"></div>
@@ -106,6 +114,7 @@
                 </div>
                 <div class="info-board" id="trump-info-panel"></div>
                 <div class="info-board" id="lead-suit-info-panel"></div>
+                <button id="view-last-trick-btn" style="display: none;">View Last Trick</button>
                 <div id="game-log-container">
                     <h4>Game Log</h4>
                     <ul id="game-log-list"></ul>

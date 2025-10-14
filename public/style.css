@@ -66,7 +66,6 @@ button:disabled { background-color: #555; border-color: #777; cursor: not-allowe
 .player-slot-info .stats { font-size: 1.1em; color: #ccc; }
 .player-slot-info .score { margin-top: 10px; font-size: 1.1em; font-weight: bold; }
 
-/* ADDED: Styling for the new "Mark AFK" button */
 .mark-afk-btn {
     font-size: 0.7em;
     padding: 4px 10px;
@@ -112,8 +111,48 @@ button:disabled { background-color: #555; border-color: #777; cursor: not-allowe
 #trick-winner-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: flex; justify-content: center; align-items: center; font-size: 4em; color: var(--gold-accent); text-shadow: 2px 2px 10px black; z-index: 200; opacity: 0; transition: opacity 0.5s ease; pointer-events: none; }
 #trick-winner-overlay.show { opacity: 1; }
 
-.modal { position: absolute; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.85); display: flex; justify-content: center; align-items: center; padding: 15px; box-sizing: border-box; }
-.modal-content { background-color: var(--teak-dark); border: 2px solid var(--gold-accent); color: var(--light-text); padding: 25px; border-radius: 10px; text-align: center; width: 100%; max-width: 95%; box-shadow: 0 0 30px rgba(0,0,0,0.5); position: relative; }
+/* MODIFIED: Modal styles for dragging */
+.modal {
+    position: absolute;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    pointer-events: none; /* Let clicks pass through the overlay */
+}
+.modal-content {
+    background-color: var(--teak-dark);
+    border: 2px solid var(--gold-accent);
+    color: var(--light-text);
+    padding: 25px;
+    border-radius: 10px;
+    text-align: center;
+    width: 100%;
+    max-width: 95%;
+    box-shadow: 0 0 30px rgba(0,0,0,0.5);
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: auto; /* Capture clicks on the content */
+}
+.modal-content h2 {
+    cursor: move;
+    user-select: none; /* Prevent text selection while dragging */
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+}
+.modal.hidden {
+    display: none !important;
+}
+/* Re-enable display:flex for visible modals */
+.modal:not(.hidden) {
+    display: flex; /* Or block, doesn't matter much now */
+}
+
 .modal-actions { margin-top: 20px; display: flex; justify-content: center; gap: 15px; }
 .modal-content .pause-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.75); display: flex; align-items: center; justify-content: center; color: var(--gold-accent); font-size: 1.5em; font-weight: bold; z-index: 10; border-radius: 8px; text-align: center; padding: 20px; box-sizing: border-box; }
 
@@ -160,7 +199,6 @@ button:disabled { background-color: #555; border-color: #777; cursor: not-allowe
     flex-direction: column;
     gap: 10px;
     margin-top: 20px;
-    /* ADDED: Makes the list scrollable if it gets too long */
     max-height: 350px;
     overflow-y: auto;
 }

@@ -28,6 +28,9 @@ window.addEventListener('DOMContentLoaded', () => {
 
 
     socket.on('updateGameState', (gs) => {
+        const wasHidden = document.getElementById('scoreboard-modal').classList.contains('hidden') 
+                        && document.getElementById('scoreboard-modal').style.display === 'none';
+        
         window.gameState = gs;
         document.getElementById('join-screen').style.display = 'none';
         document.getElementById('lobby-screen').style.display = 'none';
@@ -40,12 +43,12 @@ window.addEventListener('DOMContentLoaded', () => {
         }
 
         const scoreboardModal = document.getElementById('scoreboard-modal');
-        if (gs.phase !== 'RoundOver' && gs.phase !== 'GameOver' && scoreboardModal.style.display === 'flex') {
+        if (gs.phase !== 'RoundOver' && gs.phase !== 'GameOver' && !scoreboardModal.classList.contains('hidden')) {
             scoreboardModal.style.display = 'none';
         }
         if (gs.phase === 'RoundOver' || gs.phase === 'GameOver') {
             updateGameStatusBanner(gs);
-            if (scoreboardModal.style.display !== 'flex' && gs.phase === 'RoundOver') {
+            if ((wasHidden || scoreboardModal.style.display === 'none') && gs.phase === 'RoundOver') {
                 showScoreboard(gs);
             }
             const modalContent = scoreboardModal.querySelector('.modal-content');
@@ -97,6 +100,7 @@ window.addEventListener('DOMContentLoaded', () => {
         }
         renderScoreboard(gs);
         scoreboardModal.style.display = 'flex';
+        scoreboardModal.classList.remove('hidden');
         document.getElementById('lobby-return-countdown').style.display = 'none';
     }
 
@@ -181,16 +185,27 @@ window.addEventListener('DOMContentLoaded', () => {
             const bidInput = document.getElementById('bid-input'); 
             socket.emit('submitBid', { bid: bidInput.value }); 
         });
-        document.getElementById('endGameBtn').addEventListener('click', () => document.getElementById('confirm-end-game-modal').style.display = 'flex');
-        document.getElementById('confirm-end-no-btn').addEventListener('click', () => document.getElementById('confirm-end-game-modal').style.display = 'none');
+        const confirmModal = document.getElementById('confirm-end-game-modal');
+        document.getElementById('endGameBtn').addEventListener('click', () => {
+            confirmModal.style.display = 'flex';
+            confirmModal.classList.remove('hidden');
+        });
+        document.getElementById('confirm-end-no-btn').addEventListener('click', () => {
+            confirmModal.style.display = 'none';
+            confirmModal.classList.add('hidden');
+        });
         document.getElementById('confirm-end-yes-btn').addEventListener('click', () => { 
-            document.getElementById('confirm-end-game-modal').style.display = 'none'; 
+            confirmModal.style.display = 'none';
+            confirmModal.classList.add('hidden');
             socket.emit('endGame'); 
         });
         document.getElementById('start-next-round-btn').addEventListener('click', () => socket.emit('startNextRound'));
         document.getElementById('end-game-from-modal-btn').addEventListener('click', () => socket.emit('endGame'));
+        
+        const scoreboardModal = document.getElementById('scoreboard-modal');
         document.getElementById('player-ok-btn').addEventListener('click', () => {
-            document.getElementById('scoreboard-modal').style.display = 'none';
+            scoreboardModal.style.display = 'none';
+            scoreboardModal.classList.add('hidden');
         });
 
         const lastTrickModal = document.getElementById('last-trick-modal');
@@ -220,6 +235,7 @@ window.addEventListener('DOMContentLoaded', () => {
     socket.on('lobbyUpdate', (players) => {
         if (lobbyReturnInterval) clearInterval(lobbyReturnInterval);
         document.getElementById('scoreboard-modal').style.display = 'none';
+        document.getElementById('scoreboard-modal').classList.add('hidden');
         document.getElementById('game-log-list').innerHTML = '';
         isInitialGameRender = true;
         renderLobby(players);
@@ -290,6 +306,7 @@ window.addEventListener('DOMContentLoaded', () => {
             lobbyReturnInterval = setInterval(updateCountdown, 1000);
 
             scoreboardModal.style.display = 'flex';
+            scoreboardModal.classList.remove('hidden');
         }, 5000);
     });
 
@@ -523,17 +540,15 @@ window.addEventListener('DOMContentLoaded', () => {
         nameDiv.textContent = `${player.name} ${statusText}`;
         info.appendChild(nameDiv);
 
-        // MODIFIED: Logic to add "Mark AFK" button for the host
         const myPlayer = gs.players.find(p => p.playerId === myPersistentPlayerId);
         if (myPlayer && myPlayer.isHost && player.playerId !== myPersistentPlayerId && player.status === 'Active') {
             const afkButton = document.createElement('button');
             afkButton.className = 'mark-afk-btn';
             afkButton.textContent = 'Mark AFK';
             afkButton.addEventListener('click', (e) => {
-                e.stopPropagation(); // Prevent other clicks if needed
+                e.stopPropagation();
                 socket.emit('markPlayerAFK', { playerIdToMark: player.playerId });
             });
-            // Appending button next to the name for better alignment
             nameDiv.appendChild(afkButton);
         }
 
@@ -573,4 +588,83 @@ window.addEventListener('DOMContentLoaded', () => {
     function getSuitSymbol(suit, isImage = false) { const symbols = { 'Spades': '♠️', 'Hearts': '♥️', 'Diamonds': '♦️', 'Clubs': '♣️', 'No Trump': 'NT' }; if (isImage) { if (suit === 'No Trump') return `<div class="no-trump">NO TRUMP</div>`; const suitName = suit?.toLowerCase(); if (!suitName) return '---'; return `<img src="/cards/suit_${suitName}.svg" alt="${suit}">`; } return symbols[suit] || suit; }
     const toastNotification = document.getElementById('toast-notification'); function showToast(message) { toastNotification.textContent = message; toastNotification.classList.add('show'); setTimeout(() => toastNotification.classList.remove('show'), 3000); }
     const gameLogList = document.getElementById('game-log-list'); function addMessageToGameLog(message) { const li = document.createElement('li'); li.innerHTML = message; gameLogList.prepend(li); if (gameLogList.children.length > 12) { gameLogList.lastChild.remove(); } }
+    
+    // --- ADDED: Draggable Modal Functionality ---
+    function makeDraggable(modal) {
+        const modalContent = modal.querySelector('.modal-content');
+        const header = modal.querySelector('h2');
+        if (!header) return;
+
+        let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+
+        const dragMouseDown = (e) => {
+            e.preventDefault();
+            pos3 = e.clientX;
+            pos4 = e.clientY;
+            document.onmouseup = closeDragElement;
+            document.onmousemove = elementDrag;
+        };
+
+        const elementDrag = (e) => {
+            e.preventDefault();
+            pos1 = pos3 - e.clientX;
+            pos2 = pos4 - e.clientY;
+            pos3 = e.clientX;
+            pos4 = e.clientY;
+            
+            // Clear transform on first drag to use top/left
+            if (modalContent.style.transform) {
+                modalContent.style.transform = '';
+            }
+            
+            modalContent.style.top = (modalContent.offsetTop - pos2) + "px";
+            modalContent.style.left = (modalContent.offsetLeft - pos1) + "px";
+        };
+
+        const closeDragElement = () => {
+            document.onmouseup = null;
+            document.onmousemove = null;
+        };
+        
+        const dragTouchStart = (e) => {
+            if (e.touches.length === 1) {
+                const touch = e.touches[0];
+                pos3 = touch.clientX;
+                pos4 = touch.clientY;
+                document.ontouchend = closeTouchDragElement;
+                document.ontouchmove = elementTouchDrag;
+            }
+        };
+
+        const elementTouchDrag = (e) => {
+            if (e.touches.length === 1) {
+                e.preventDefault();
+                const touch = e.touches[0];
+                pos1 = pos3 - touch.clientX;
+                pos2 = pos4 - touch.clientY;
+                pos3 = touch.clientX;
+                pos4 = touch.clientY;
+
+                if (modalContent.style.transform) {
+                    modalContent.style.transform = '';
+                }
+
+                modalContent.style.top = (modalContent.offsetTop - pos2) + "px";
+                modalContent.style.left = (modalContent.offsetLeft - pos1) + "px";
+            }
+        };
+
+        const closeTouchDragElement = () => {
+            document.ontouchend = null;
+            document.ontouchmove = null;
+        };
+
+        header.addEventListener('mousedown', dragMouseDown);
+        header.addEventListener('touchstart', dragTouchStart);
+    }
+    
+    // Make all modals draggable
+    makeDraggable(document.getElementById('scoreboard-modal'));
+    makeDraggable(document.getElementById('confirm-end-game-modal'));
+    makeDraggable(document.getElementById('last-trick-modal'));
 });

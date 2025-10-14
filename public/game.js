@@ -4,12 +4,11 @@ window.addEventListener('DOMContentLoaded', () => {
 
     window.gameState = {};
     let myPersistentPlayerId = sessionStorage.getItem('judgmentPlayerId');
-    let isInitialGameRender = true;
+    let isInitialGameRender = true; // Flag to handle mobile scroll position
     let pauseCountdownInterval;
     let lobbyReturnInterval;
     let trickReviewInterval;
     let actionBannerCountdownInterval;
-    let turnCountdownInterval;
 
     socket.on('connect', () => {
         myPersistentPlayerId = sessionStorage.getItem('judgmentPlayerId');
@@ -90,6 +89,8 @@ window.addEventListener('DOMContentLoaded', () => {
         if (myPlayer && myPlayer.isHost) {
             hostControls.style.display = 'flex';
             playerControls.style.display = 'none';
+            document.getElementById('start-next-round-btn').textContent = 'Start Next Round';
+            document.getElementById('end-game-from-modal-btn').textContent = 'End Game';
         } else {
             hostControls.style.display = 'none';
             playerControls.style.display = 'flex';
@@ -148,17 +149,11 @@ window.addEventListener('DOMContentLoaded', () => {
     }
 
     function setupDynamicEventListeners() {
-        document.getElementById('player-list').addEventListener('click', (e) => {
+        const playerList = document.getElementById('player-list');
+        playerList.addEventListener('click', (e) => {
             if (e.target && e.target.classList.contains('kick-btn')) {
                 const playerIdToKick = e.target.dataset.playerId;
                 socket.emit('kickPlayer', { playerIdToKick });
-            }
-        });
-
-        document.getElementById('player-slots-container').addEventListener('click', (e) => {
-            if (e.target && e.target.classList.contains('ingame-kick-btn')) {
-                const playerIdToKick = e.target.dataset.playerId;
-                socket.emit('hostKickPlayer', { playerIdToKick });
             }
         });
 
@@ -173,7 +168,9 @@ window.addEventListener('DOMContentLoaded', () => {
             for (let i = 0; i < 3; i++) {
                 const dot = document.createElement('div');
                 dot.className = 'dot';
-                if (i === currentPage) { dot.classList.add('active'); }
+                if (i === currentPage) {
+                    dot.classList.add('active');
+                }
                 pageIndicator.appendChild(dot);
             }
         });
@@ -250,7 +247,6 @@ window.addEventListener('DOMContentLoaded', () => {
 
     socket.on('finalGameOver', ({ gameState, winners }) => {
         if (pauseCountdownInterval) clearInterval(pauseCountdownInterval);
-        if (turnCountdownInterval) clearInterval(turnCountdownInterval);
         const overlay = document.getElementById('winner-celebration-overlay');
         let winnerText = '';
         if (winners && winners.length > 0) {
@@ -350,14 +346,10 @@ window.addEventListener('DOMContentLoaded', () => {
     function renderGameBoard(gs) {
         const myPlayer = gs.players.find(p => p.playerId === myPersistentPlayerId);
         if (!myPlayer) return;
-        
-        if (turnCountdownInterval) clearInterval(turnCountdownInterval);
-        
         renderLeftColumn(gs, myPlayer);
         renderCenterColumn(gs);
         renderRightColumn(gs);
         updateGameStatusBanner(gs);
-        
         document.getElementById('endGameBtn').style.display = myPlayer.isHost ? 'block' : 'none';
     }
 
@@ -471,7 +463,7 @@ window.addEventListener('DOMContentLoaded', () => {
                 trickReviewInterval = setInterval(updateTrickTimer, 1000);
                 break;
             case 'RoundOver':
-                banner.innerHTML = `Round ${gs.roundNumber} over; Waiting for Host to start Round ${gs.roundNumber + 1}`;
+                banner.innerHTML = `Round ${gs.roundNumber} over; Waiting for the Host to start Round ${gs.roundNumber + 1}`;
                 break;
             case 'GameOver':
                 banner.innerHTML = 'Game Over! Returning to lobby shortly...';
@@ -484,68 +476,76 @@ window.addEventListener('DOMContentLoaded', () => {
     function renderLastTrickModal(gs) {
         const lastTrickData = gs.lastCompletedTrick;
         if (!lastTrickData) return;
+        
         const detailsContainer = document.getElementById('last-trick-details');
         const modal = document.getElementById('last-trick-modal');
         detailsContainer.innerHTML = '';
+
         lastTrickData.trick.forEach(play => {
-            const row = document.createElement('div'); row.className = 'last-trick-row';
-            const nameEl = document.createElement('span'); nameEl.className = 'player-name'; nameEl.textContent = play.name;
-            if (play.playerId === lastTrickData.winnerId) { row.classList.add('winner'); nameEl.textContent += ' 🏆'; }
+            const row = document.createElement('div');
+            row.className = 'last-trick-row';
+            
+            const nameEl = document.createElement('span');
+            nameEl.className = 'player-name';
+            nameEl.textContent = play.name;
+            
+            if (play.playerId === lastTrickData.winnerId) {
+                row.classList.add('winner');
+                nameEl.textContent += ' 🏆';
+            }
+            
             const cardEl = createCardElement(play.card);
-            row.appendChild(nameEl); row.appendChild(cardEl); detailsContainer.appendChild(row);
+            
+            row.appendChild(nameEl);
+            row.appendChild(cardEl);
+            detailsContainer.appendChild(row);
         });
+        
         modal.classList.remove('hidden');
     }
 
     function createPlayerSlot(player, gs) {
         const slot = document.createElement('div');
         slot.className = 'player-slot';
-        const activePlayerIndex = gs.phase === 'Bidding' ? gs.biddingPlayerIndex : gs.currentPlayerIndex;
-        const isActivePlayer = activePlayerIndex !== null && gs.players[activePlayerIndex]?.playerId === player.playerId;
+        const isActivePlayer = (gs.phase === 'Bidding' && gs.players[gs.biddingPlayerIndex]?.playerId === player.playerId) || (gs.phase === 'Playing' && gs.players[gs.currentPlayerIndex]?.playerId === player.playerId);
         if (isActivePlayer && !gs.isPaused) { slot.classList.add('active-player'); }
-    
+        
         const info = document.createElement('div');
         info.className = 'player-slot-info';
-    
+        
         let nameClass = "name";
         let statusText = '';
         if (player.status === 'Disconnected') { nameClass += " disconnected"; statusText = '(Disconnected)'; }
         else if (player.status === 'Removed') { nameClass += " removed"; statusText = '(Removed)'; }
-        else if (player.isInactive) { statusText = ' (Inactive)'; }
-    
-        const playerActions = document.createElement('div');
-        playerActions.className = 'player-slot-actions';
-    
+        
         const nameDiv = document.createElement('div');
         nameDiv.className = nameClass;
         nameDiv.textContent = `${player.name} ${statusText}`;
-        playerActions.appendChild(nameDiv);
-    
-        const me = gs.players.find(p => p.playerId === myPersistentPlayerId);
-        if (me && me.isHost && player.isInactive && player.playerId !== me.playerId) {
-            const kickBtn = document.createElement('button');
-            kickBtn.textContent = 'Kick';
-            kickBtn.className = 'ingame-kick-btn';
-            kickBtn.dataset.playerId = player.playerId;
-            playerActions.appendChild(kickBtn);
+        info.appendChild(nameDiv);
+
+        // MODIFIED: Logic to add "Mark AFK" button for the host
+        const myPlayer = gs.players.find(p => p.playerId === myPersistentPlayerId);
+        if (myPlayer && myPlayer.isHost && player.playerId !== myPersistentPlayerId && player.status === 'Active') {
+            const afkButton = document.createElement('button');
+            afkButton.className = 'mark-afk-btn';
+            afkButton.textContent = 'Mark AFK';
+            afkButton.addEventListener('click', (e) => {
+                e.stopPropagation(); // Prevent other clicks if needed
+                socket.emit('markPlayerAFK', { playerIdToMark: player.playerId });
+            });
+            // Appending button next to the name for better alignment
+            nameDiv.appendChild(afkButton);
         }
-    
-        info.appendChild(playerActions);
-        info.innerHTML += `<div class="stats">Bid: ${player.bid ?? '...'} | Won: ${player.tricksWon}</div><div class="score">Current Score: ${player.score}</div>`;
-        
-        if (isActivePlayer && gs.turnEndTime && !gs.isPaused) {
-            const timerDiv = document.createElement('div');
-            timerDiv.className = 'turn-timer';
-            info.appendChild(timerDiv);
-            
-            const updateTimer = () => {
-                const remaining = Math.max(0, Math.round((gs.turnEndTime - Date.now()) / 1000));
-                timerDiv.textContent = `Time left: ${remaining}s`;
-                if(remaining <= 0) clearInterval(turnCountdownInterval);
-            };
-            updateTimer();
-            turnCountdownInterval = setInterval(updateTimer, 1000);
-        }
+
+        const statsDiv = document.createElement('div');
+        statsDiv.className = 'stats';
+        statsDiv.textContent = `Bid: ${player.bid ?? '...'} | Won: ${player.tricksWon}`;
+        info.appendChild(statsDiv);
+
+        const scoreDiv = document.createElement('div');
+        scoreDiv.className = 'score';
+        scoreDiv.textContent = `Current Score: ${player.score}`;
+        info.appendChild(scoreDiv);
     
         const cardPlaceholder = document.createElement('div');
         cardPlaceholder.className = 'card-placeholder';
@@ -562,12 +562,11 @@ window.addEventListener('DOMContentLoaded', () => {
             indicator.textContent = '🏆';
             cardPlaceholder.appendChild(indicator);
         }
-    
         slot.appendChild(info);
         slot.appendChild(cardPlaceholder);
         return slot;
     }
-    
+
     function getFixedPlayerOrder(players, dealerIndex) { let sorted = []; const numPlayers = players.length; if (dealerIndex === -1) return players.slice().sort((a,b) => a.playOrder - b.playOrder); let startIndex = (dealerIndex + 1) % numPlayers; for (let i = 0; i < numPlayers; i++) { const player = players.find(p => p.playOrder === startIndex); if (player) sorted.push(player); startIndex = (startIndex + 1) % numPlayers; } return sorted; }
     function getCardDataFromElement(el, hand) { if (!el.dataset.card) return null; const [suit, rankName] = el.dataset.card.split('_'); const cardRank = Object.keys(rankMap).find(key => rankMap[key] === rankName); const cardSuit = suit.charAt(0).toUpperCase() + suit.slice(1); return hand.find(c => c.suit === cardSuit && c.rank === cardRank); }
     function createCardElement(card) { const cardEl = document.createElement('div'); cardEl.className = 'card'; cardEl.dataset.card = `${card.suit.toLowerCase()}_${rankMap[card.rank]}`; const rankName = rankMap[card.rank]; const suitName = card.suit.toLowerCase(); const imageName = `${suitName}_${rankName}.svg`; cardEl.style.backgroundImage = `url('/cards/${imageName}')`; return cardEl; }
@@ -575,4 +574,3 @@ window.addEventListener('DOMContentLoaded', () => {
     const toastNotification = document.getElementById('toast-notification'); function showToast(message) { toastNotification.textContent = message; toastNotification.classList.add('show'); setTimeout(() => toastNotification.classList.remove('show'), 3000); }
     const gameLogList = document.getElementById('game-log-list'); function addMessageToGameLog(message) { const li = document.createElement('li'); li.innerHTML = message; gameLogList.prepend(li); if (gameLogList.children.length > 12) { gameLogList.lastChild.remove(); } }
 });
-}

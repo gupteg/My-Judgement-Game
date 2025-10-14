@@ -60,16 +60,25 @@ button:disabled { background-color: #555; border-color: #777; cursor: not-allowe
 .player-slot.active-player { border-color: var(--gold-accent); box-shadow: 0 0 15px var(--gold-accent); animation: flashing-border 2s infinite; }
 @keyframes flashing-border { 50% { border-color: var(--light-text); box-shadow: 0 0 15px var(--light-text); } }
 .player-slot-info { text-align: left; flex-grow: 1; }
-.player-slot-info .name { font-size: 1.8em; font-weight: bold; }
+.player-slot-info .name { font-size: 1.8em; font-weight: bold; display: flex; align-items: center; }
 .player-slot-info .name.disconnected { opacity: 0.6; font-style: italic; }
 .player-slot-info .name.removed { opacity: 0.4; text-decoration: line-through; }
 .player-slot-info .stats { font-size: 1.1em; color: #ccc; }
 .player-slot-info .score { margin-top: 10px; font-size: 1.1em; font-weight: bold; }
-/* ADDED: Style for turn timer and in-game kick button */
-.turn-timer { font-size: 0.9em; font-weight: bold; color: var(--gold-accent); margin-top: 5px; }
-.ingame-kick-btn { font-size: 0.8em; padding: 4px 10px; margin-left: 10px; background-color: #8B0000; border-color: #FF4500; }
-.ingame-kick-btn:hover { background-color: #DC143C; }
-.player-slot-actions { display: flex; align-items: center; }
+
+/* ADDED: Styling for the new "Mark AFK" button */
+.mark-afk-btn {
+    font-size: 0.7em;
+    padding: 4px 10px;
+    margin-left: 15px;
+    background-color: #b8860b;
+    border-color: #daa520;
+    font-weight: normal;
+}
+.mark-afk-btn:hover {
+    background-color: #ffc400;
+    border-color: #f5f5dc;
+}
 
 .card-placeholder { width: 80px; height: 112px; border: 2px dashed rgba(255,255,255,0.3); border-radius: 6px; position: relative; flex-shrink: 0; }
 .card-placeholder .card { width: 100%; height: 100%; }
@@ -129,6 +138,7 @@ button:disabled { background-color: #555; border-color: #777; cursor: not-allowe
 
 .hidden { display: none !important; }
 
+/* Styling for Last Trick Modal */
 #last-trick-modal .modal-content {
     max-width: 450px;
 }
@@ -150,6 +160,7 @@ button:disabled { background-color: #555; border-color: #777; cursor: not-allowe
     flex-direction: column;
     gap: 10px;
     margin-top: 20px;
+    /* ADDED: Makes the list scrollable if it gets too long */
     max-height: 350px;
     overflow-y: auto;
 }
@@ -170,11 +181,11 @@ button:disabled { background-color: #555; border-color: #777; cursor: not-allowe
     font-weight: bold;
 }
 .last-trick-row .card {
-    width: 60px;
+    width: 60px; /* smaller card */
     height: 84px;
 }
 .last-trick-row .card:hover {
-    transform: none;
+    transform: none; /* disable hover effects in modal */
 }
 
 #winner-celebration-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.85); z-index: 2000; display: flex; justify-content: center; align-items: center; flex-direction: column; overflow: hidden; opacity: 0; transition: opacity 0.5s ease-in-out; }

@@ -589,10 +589,10 @@ window.addEventListener('DOMContentLoaded', () => {
     const toastNotification = document.getElementById('toast-notification'); function showToast(message) { toastNotification.textContent = message; toastNotification.classList.add('show'); setTimeout(() => toastNotification.classList.remove('show'), 3000); }
     const gameLogList = document.getElementById('game-log-list'); function addMessageToGameLog(message) { const li = document.createElement('li'); li.innerHTML = message; gameLogList.prepend(li); if (gameLogList.children.length > 12) { gameLogList.lastChild.remove(); } }
     
-    // --- ADDED: Draggable Modal Functionality ---
+    // --- Draggable Modal Functionality ---
     function makeDraggable(modal) {
         const modalContent = modal.querySelector('.modal-content');
-        const header = modal.querySelector('h2');
+        const header = modal.querySelector('.modal-header'); // MODIFIED: Target the specific header class
         if (!header) return;
 
         let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
@@ -612,7 +612,6 @@ window.addEventListener('DOMContentLoaded', () => {
             pos3 = e.clientX;
             pos4 = e.clientY;
             
-            // Clear transform on first drag to use top/left
             if (modalContent.style.transform) {
                 modalContent.style.transform = '';
             }

@@ -37,8 +37,10 @@
 
         <div id="last-trick-modal" class="modal hidden">
             <div class="modal-content">
-                <span class="close-btn" id="close-last-trick-modal">&times;</span>
-                <h2>Previous Trick</h2>
+                <div class="modal-header">
+                    <h2>Previous Trick</h2>
+                    <span class="close-btn" id="close-last-trick-modal">&times;</span>
+                </div>
                 <div id="last-trick-details"></div>
             </div>
         </div>
@@ -49,7 +51,9 @@
 
                 <div id="scoreboard-modal" class="modal" style="display: none;">
                     <div class="modal-content">
-                        <h2 id="scoreboard-title"></h2>
+                        <div class="modal-header">
+                            <h2 id="scoreboard-title"></h2>
+                        </div>
                         <div id="scoreboard-table-container"></div>
                         <div id="next-round-preview"></div>
                         <div id="lobby-return-countdown"></div>
@@ -65,7 +69,9 @@
 
                 <div id="confirm-end-game-modal" class="modal" style="display: none;">
                     <div class="modal-content">
-                        <h2>End Game</h2>
+                        <div class="modal-header">
+                            <h2>End Game</h2>
+                        </div>
                         <p>Are you sure you want to end the game for everyone?</p>
                         <div class="modal-actions">
                             <button id="confirm-end-yes-btn">Yes, End Game</button>

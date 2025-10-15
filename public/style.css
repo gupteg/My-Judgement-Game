@@ -120,7 +120,7 @@ button:disabled { background-color: #555; border-color: #777; cursor: not-allowe
     width: 100%;
     height: 100%;
     background-color: rgba(0, 0, 0, 0.7);
-    pointer-events: none; /* Let clicks pass through the overlay */
+    pointer-events: none;
 }
 .modal-content {
     background-color: var(--teak-dark);
@@ -136,21 +136,31 @@ button:disabled { background-color: #555; border-color: #777; cursor: not-allowe
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    pointer-events: auto; /* Capture clicks on the content */
-}
-.modal-content h2 {
-    cursor: move;
-    user-select: none; /* Prevent text selection while dragging */
-    -webkit-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
+    pointer-events: auto;
 }
 .modal.hidden {
     display: none !important;
 }
-/* Re-enable display:flex for visible modals */
 .modal:not(.hidden) {
-    display: flex; /* Or block, doesn't matter much now */
+    display: flex;
+}
+
+/* ADDED: Styling for the new draggable header */
+.modal-header {
+    position: relative;
+    cursor: move;
+    padding-bottom: 15px;
+    margin: -25px -25px 20px -25px;
+    padding: 15px 25px;
+    border-bottom: 1px solid var(--teak-light);
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+}
+.modal-header h2 {
+    margin: 0;
+    font-size: 1.5em; /* Ensure consistent title size */
 }
 
 .modal-actions { margin-top: 20px; display: flex; justify-content: center; gap: 15px; }
@@ -183,7 +193,8 @@ button:disabled { background-color: #555; border-color: #777; cursor: not-allowe
 }
 .close-btn {
     position: absolute;
-    top: 10px;
+    top: 50%; /* Center vertically within the header */
+    transform: translateY(-50%);
     right: 20px;
     font-size: 2em;
     font-weight: bold;
@@ -198,7 +209,7 @@ button:disabled { background-color: #555; border-color: #777; cursor: not-allowe
     display: flex;
     flex-direction: column;
     gap: 10px;
-    margin-top: 20px;
+    margin-top: 0; /* Adjusted since header provides margin */
     max-height: 350px;
     overflow-y: auto;
 }

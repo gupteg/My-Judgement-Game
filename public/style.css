@@ -93,7 +93,6 @@ button:disabled { background-color: #555; border-color: #777; cursor: not-allowe
 .trump-text { font-weight: bold; font-size: 1.2em; color: var(--dark-text); }
 .no-trump { font-size: 2em; font-weight: bold; padding: 20px 0; }
 
-/* REDESIGNED: The two-tiered "Round Vitals" dashboard */
 #round-vitals {
     background: rgba(0,0,0,0.3);
     border-radius: 8px;
@@ -118,7 +117,11 @@ button:disabled { background-color: #555; border-color: #777; cursor: not-allowe
     gap: 5px;
 }
 .vital-trump-area .label { font-size: 1.1em; font-weight: bold; color: var(--gold-accent); }
-.vital-trump-area .trump-icon { width: 50px; height: 50px; }
+.vital-trump-area .trump-icon { 
+    /* MODIFIED: Increased size from 50px to 80px */
+    width: 80px; 
+    height: 80px; 
+}
 .vital-trump-area .no-trump-value { font-size: 1.8em; font-weight: bold; color: var(--light-text); }
 
 #view-last-trick-btn { width: 100%; box-sizing: border-box; font-size: 1em; padding: 10px; }

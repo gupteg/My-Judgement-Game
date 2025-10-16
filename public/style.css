@@ -6,7 +6,7 @@
 #mobile-scroll-container { display: contents; } /* Behaves normally on desktop */
 #page-indicator { display: none; } /* Hidden on desktop */
 
-:root { --teak-dark: #4a2c2a; --teak-light: #8c5b4f; --felt-green: #004d25; --gold-accent: #daa520; --light-text: #f5f5dc; }
+:root { --teak-dark: #4a2c2a; --teak-light: #8c5b4f; --felt-green: #004d25; --gold-accent: #daa520; --light-text: #f5f5dc; --parchment-bg: #f5f5dc; --dark-text: #4a2c2a; --busted-red: #c70039; }
 body { font-family: 'Georgia', 'Times New Roman', Times, serif; background-color: var(--teak-dark); background-image: url('https://www.transparenttextures.com/patterns/wood-pattern.png'); padding: 15px; margin: 0; height: 100vh; box-sizing: border-box; color: var(--light-text); overflow: hidden; }
 
 #join-screen, #lobby-screen { background-color: rgba(0,0,0,0.6); border: 2px solid var(--gold-accent); padding: 30px; border-radius: 10px; max-width: 450px; margin: 50px auto; text-align: center; box-shadow: 0 5px 25px rgba(0,0,0,0.5); }
@@ -26,7 +26,7 @@ button:disabled { background-color: #555; border-color: #777; cursor: not-allowe
 .kick-btn { font-size: 0.8em; padding: 4px 10px; margin-left: 10px; background-color: #8B0000; border-color: #FF4500; }
 .kick-btn:hover { background-color: #DC143C; }
 
-#local-player-stats { padding: 10px; background: rgba(0,0,0,0.3); border-radius: 8px; margin-bottom: 15px; text-align: center; }
+#local-player-stats { padding: 10px; background: rgba(0,0,0,0.3); border-radius: 8px; margin-bottom: 10px; text-align: center; }
 #local-player-stats h3 { margin: 0; color: var(--gold-accent); font-size: 1.5em; }
 
 .hand-controls { display: flex; justify-content: center; margin-bottom: 10px; }
@@ -38,7 +38,7 @@ button:disabled { background-color: #555; border-color: #777; cursor: not-allowe
 .card.dragging { opacity: 0.5; transform: scale(1.05); box-shadow: 0 0 20px black; }
 .card:hover { transform: translateY(-15px) scale(1.05); z-index: 10; }
 .card.clickable:hover { cursor: pointer; box-shadow: 0 0 20px var(--gold-accent); }
-#local-player-score-board { display: flex; gap: 10px; margin-top: 15px; }
+#local-player-score-board { display: flex; gap: 10px; margin-bottom: 10px; }
 .score-box { flex-grow: 1; background: var(--teak-dark); border: 2px solid var(--teak-light); border-radius: 8px; padding: 10px; text-align: center; }
 .score-box h4 { margin: 0 0 10px 0; color: var(--gold-accent); }
 .score-box span { font-size: 2.5em; font-weight: bold; }
@@ -59,25 +59,21 @@ button:disabled { background-color: #555; border-color: #777; cursor: not-allowe
 .player-slot { background-color: rgba(0,0,0,0.2); border: 3px solid var(--teak-light); border-radius: 8px; padding: 15px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; transition: all 0.3s ease; }
 .player-slot.active-player { border-color: var(--gold-accent); box-shadow: 0 0 15px var(--gold-accent); animation: flashing-border 2s infinite; }
 @keyframes flashing-border { 50% { border-color: var(--light-text); box-shadow: 0 0 15px var(--light-text); } }
-.player-slot-info { text-align: left; flex-grow: 1; }
+.player-slot-info { text-align: left; flex-grow: 1; display: flex; flex-direction: column; gap: 5px; }
 .player-slot-info .name { font-size: 1.8em; font-weight: bold; display: flex; align-items: center; }
 .player-slot-info .name.disconnected { opacity: 0.6; font-style: italic; }
 .player-slot-info .name.removed { opacity: 0.4; text-decoration: line-through; }
-.player-slot-info .stats { font-size: 1.1em; color: #ccc; }
-.player-slot-info .score { margin-top: 10px; font-size: 1.1em; font-weight: bold; }
+.player-slot-info .score { font-size: 1.1em; font-weight: bold; }
 
-.mark-afk-btn {
-    font-size: 0.7em;
-    padding: 4px 10px;
-    margin-left: 15px;
-    background-color: #b8860b;
-    border-color: #daa520;
-    font-weight: normal;
-}
-.mark-afk-btn:hover {
-    background-color: #ffc400;
-    border-color: #f5f5dc;
-}
+/* ADDED: Styles for the Bid/Trick progress display */
+.bid-progress-container { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; min-height: 24px; }
+.bid-progress-container .bidding-text { font-style: italic; color: #ccc; }
+.trick-icon { width: 20px; height: 20px; transition: all 0.3s ease; }
+.trick-icon.trick-won { animation: coin-pop 0.3s ease-out; }
+@keyframes coin-pop { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+.mark-afk-btn { font-size: 0.7em; padding: 4px 10px; margin-left: 15px; background-color: #b8860b; border-color: #daa520; font-weight: normal; }
+.mark-afk-btn:hover { background-color: #ffc400; border-color: #f5f5dc; }
 
 .card-placeholder { width: 80px; height: 112px; border: 2px dashed rgba(255,255,255,0.3); border-radius: 6px; position: relative; flex-shrink: 0; }
 .card-placeholder .card { width: 100%; height: 100%; }
@@ -88,21 +84,34 @@ button:disabled { background-color: #555; border-color: #777; cursor: not-allowe
 
 .info-board-row { display: flex; gap: 15px; }
 .info-board-row .info-board { flex: 1; margin-top: 0; }
-.info-board { background: rgba(0,0,0,0.3); border-radius: 8px; padding: 15px; text-align: center; }
-#round-title-board + .info-board-row { margin-top: 15px; }
-.info-board .label { font-size: 1.2em; color: var(--gold-accent); }
+.info-board { background: var(--parchment-bg); color: var(--dark-text); border: 3px solid var(--teak-light); border-radius: 8px; padding: 15px; text-align: center; box-shadow: inset 0 0 10px rgba(0,0,0,0.3); }
+.info-board .label { font-size: 1.2em; color: var(--teak-light); font-weight: bold; }
 .info-board .value { font-size: 2em; font-weight: bold; }
-#trump-info-panel, #lead-suit-info-panel { text-align: center; margin-top:15px; }
-#trump-info-panel h4, #lead-suit-info-panel h4 { margin: 0 0 10px 0; color: var(--gold-accent); border-bottom: 1px solid var(--teak-light); padding-bottom: 8px; }
-#trump-info-panel .no-trump { font-size: 1.5em; font-weight: bold; }
-#lead-suit-info-panel { min-height: 118px; }
+#trump-info-panel, #lead-suit-info-panel { text-align: center; margin-top: 15px; padding: 10px; }
+#trump-info-panel h4, #lead-suit-info-panel h4 { margin: 0 0 10px 0; color: var(--teak-light); border-bottom: 1px solid var(--teak-light); padding-bottom: 8px; }
+.trump-display { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+#trump-info-panel img, #lead-suit-info-panel img { width: 90px; height: 90px; } /* Increased size */
+.trump-text { font-weight: bold; font-size: 1.2em; color: var(--dark-text); }
+.no-trump { font-size: 2em; font-weight: bold; padding: 20px 0; }
 
-#view-last-trick-btn {
-    width: 100%;
-    box-sizing: border-box;
-    font-size: 1em;
+/* ADDED: Styles for the new "Round Vitals" player dashboard */
+#round-vitals {
+    background: rgba(0,0,0,0.3);
+    border-radius: 8px;
     padding: 10px;
+    margin-bottom: 15px;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    gap: 15px;
 }
+.vital-stat { text-align: center; }
+.vital-stat .label { font-size: 0.9em; color: #ccc; }
+.vital-stat .value { font-size: 1.4em; font-weight: bold; color: var(--gold-accent); }
+.vital-stat .trump-icon { width: 40px; height: 40px; }
+
+
+#view-last-trick-btn { width: 100%; box-sizing: border-box; font-size: 1em; padding: 10px; }
 
 #game-log-container { flex-grow: 1; background-color: rgba(0,0,0,0.3); border-radius: 8px; padding: 15px; display: flex; flex-direction: column; }
 #game-log-container h4 { margin: 0 0 10px 0; color: var(--gold-accent); border-bottom: 1px solid var(--teak-light); padding-bottom: 8px; text-align: center; }
@@ -111,131 +120,97 @@ button:disabled { background-color: #555; border-color: #777; cursor: not-allowe
 #trick-winner-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: flex; justify-content: center; align-items: center; font-size: 4em; color: var(--gold-accent); text-shadow: 2px 2px 10px black; z-index: 200; opacity: 0; transition: opacity 0.5s ease; pointer-events: none; }
 #trick-winner-overlay.show { opacity: 1; }
 
-/* MODIFIED: Modal styles for dragging */
-.modal {
-    position: absolute;
-    z-index: 1000;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.7);
-    pointer-events: none;
-}
-.modal-content {
-    background-color: var(--teak-dark);
-    border: 2px solid var(--gold-accent);
-    color: var(--light-text);
-    padding: 25px;
-    border-radius: 10px;
-    text-align: center;
-    width: 100%;
-    max-width: 95%;
-    box-shadow: 0 0 30px rgba(0,0,0,0.5);
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    pointer-events: auto;
-}
-.modal.hidden {
-    display: none !important;
-}
-.modal:not(.hidden) {
-    display: flex;
-}
-
-/* ADDED: Styling for the new draggable header */
-.modal-header {
-    position: relative;
-    cursor: move;
-    padding-bottom: 15px;
-    margin: -25px -25px 20px -25px;
-    padding: 15px 25px;
-    border-bottom: 1px solid var(--teak-light);
-    user-select: none;
-    -webkit-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
-}
-.modal-header h2 {
-    margin: 0;
-    font-size: 1.5em; /* Ensure consistent title size */
-}
-
+.modal { position: absolute; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.7); pointer-events: none; }
+.modal-content { background-color: var(--teak-dark); border: 2px solid var(--gold-accent); color: var(--light-text); padding: 25px; border-radius: 10px; text-align: center; width: 100%; max-width: 95%; box-shadow: 0 0 30px rgba(0,0,0,0.5); position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); pointer-events: auto; }
+.modal.hidden { display: none !important; }
+.modal:not(.hidden) { display: flex; }
+.modal-header { position: relative; cursor: move; padding-bottom: 15px; margin: -25px -25px 20px -25px; padding: 15px 25px; border-bottom: 1px solid var(--teak-light); user-select: none; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; }
+.modal-header h2 { margin: 0; font-size: 1.5em; }
 .modal-actions { margin-top: 20px; display: flex; justify-content: center; gap: 15px; }
 .modal-content .pause-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.75); display: flex; align-items: center; justify-content: center; color: var(--gold-accent); font-size: 1.5em; font-weight: bold; z-index: 10; border-radius: 8px; text-align: center; padding: 20px; box-sizing: border-box; }
-
 #lobby-return-countdown { margin-top: 20px; padding-top: 15px; border-top: 1px solid var(--teak-light); font-size: 1.2em; font-weight: bold; color: var(--gold-accent); }
-#next-round-preview { margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--teak-light); display: flex; flex-direction: column; align-items: center; gap: 8px; }
-#next-round-preview .next-round-title { font-size: 1.5em; font-weight: bold; color: var(--gold-accent); }
-#next-round-preview .next-round-detail { font-size: 1.1em; color: var(--light-text); }
-#next-round-preview .next-round-trump { display: flex; align-items: center; gap: 10px; font-size: 1.2em; }
-#next-round-preview img { width: 30px; height: 30px; }
 
-#countdown-timer { font-size: 1.1em; color: var(--gold-accent); margin-top: 15px; font-weight: bold; height: 20px; }
+/* REDESIGNED: The "Dealer's Announcement Plaque" */
+#next-round-preview {
+    margin-top: 20px;
+    padding: 15px;
+    background: var(--teak-light);
+    border: 3px solid var(--teak-dark);
+    box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
+    border-radius: 10px;
+}
+.plaque-title {
+    font-size: 1.8em;
+    font-weight: bold;
+    color: var(--gold-accent);
+    text-shadow: 1px 1px 2px var(--teak-dark);
+    margin-bottom: 15px;
+}
+.trump-reveal-card {
+    background: var(--parchment-bg);
+    color: var(--dark-text);
+    padding: 15px;
+    margin: 10px auto;
+    border-radius: 8px;
+    width: 80%;
+    max-width: 250px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+    border: 1px solid var(--teak-dark);
+}
+.trump-reveal-card .suit-icon {
+    width: 60px;
+    height: 60px;
+    margin: 0 auto;
+}
+.trump-reveal-card .suit-icon.no-trump-icon {
+    font-size: 2.5em;
+    font-weight: bold;
+    color: var(--dark-text);
+}
+.trump-reveal-card .suit-name {
+    font-weight: bold;
+    font-size: 1.2em;
+    margin-top: 5px;
+}
+.next-round-details-grid {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    margin-top: 15px;
+    font-size: 1.1em;
+}
+.next-round-detail-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.next-round-detail-item svg {
+    width: 24px;
+    height: 24px;
+    fill: var(--light-text);
+}
+
+
 .score-table { width: 100%; border-collapse: collapse; margin-top: 20px; background-color: var(--teak-light); }
 .score-table th, .score-table td { border: 1px solid var(--teak-dark); padding: 8px; text-align: center; }
 .score-table th { background-color: var(--gold-accent); color: var(--teak-dark); }
 .score-table .correct-bid { color: #90ee90; font-weight: bold; }
 .score-table .incorrect-bid { color: #ff8c69; }
-.trump-display { display: flex; flex-direction: column; align-items: center; gap: 8px; }
-#trump-info-panel img, #lead-suit-info-panel img { width: 70px; height: 70px; }
-.trump-text { font-weight: bold; font-size: 1.1em; color: var(--gold-accent); }
+
 #toast-notification { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); padding: 12px 24px; background-color: var(--gold-accent); color: var(--teak-dark); font-weight: bold; border-radius: 25px; z-index: 500; opacity: 0; transition: all 0.5s ease-in-out; pointer-events: none; width: 80%; }
 #toast-notification.show { opacity: 1; transform: translate(-50%, 10px); }
-
 .hidden { display: none !important; }
 
 /* Styling for Last Trick Modal */
-#last-trick-modal .modal-content {
-    max-width: 450px;
-}
-.close-btn {
-    position: absolute;
-    top: 50%; /* Center vertically within the header */
-    transform: translateY(-50%);
-    right: 20px;
-    font-size: 2em;
-    font-weight: bold;
-    color: var(--light-text);
-    cursor: pointer;
-    transition: color 0.2s ease;
-}
-.close-btn:hover {
-    color: var(--gold-accent);
-}
-#last-trick-details {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    margin-top: 0; /* Adjusted since header provides margin */
-    max-height: 350px;
-    overflow-y: auto;
-}
-.last-trick-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background-color: rgba(0,0,0,0.2);
-    padding: 8px;
-    border-radius: 6px;
-    border: 2px solid transparent;
-}
-.last-trick-row.winner {
-    border-color: var(--gold-accent);
-}
-.last-trick-row .player-name {
-    font-size: 1.2em;
-    font-weight: bold;
-}
-.last-trick-row .card {
-    width: 60px; /* smaller card */
-    height: 84px;
-}
-.last-trick-row .card:hover {
-    transform: none; /* disable hover effects in modal */
-}
+#last-trick-modal .modal-content { max-width: 450px; }
+.close-btn { position: absolute; top: 50%; transform: translateY(-50%); right: 20px; font-size: 2em; font-weight: bold; color: var(--light-text); cursor: pointer; transition: color 0.2s ease; }
+.close-btn:hover { color: var(--gold-accent); }
+#last-trick-details { display: flex; flex-direction: column; gap: 10px; margin-top: 0; max-height: 350px; overflow-y: auto; }
+.last-trick-row { display: flex; justify-content: space-between; align-items: center; background-color: rgba(0,0,0,0.2); padding: 8px; border-radius: 6px; border: 2px solid transparent; }
+.last-trick-row.winner { border-color: var(--gold-accent); }
+.last-trick-row .player-name { font-size: 1.2em; font-weight: bold; }
+.last-trick-row .card { width: 60px; height: 84px; }
+.last-trick-row .card:hover { transform: none; }
 
 #winner-celebration-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.85); z-index: 2000; display: flex; justify-content: center; align-items: center; flex-direction: column; overflow: hidden; opacity: 0; transition: opacity 0.5s ease-in-out; }
 #winner-celebration-overlay:not(.hidden) { opacity: 1; }
@@ -248,32 +223,9 @@ button:disabled { background-color: #555; border-color: #777; cursor: not-allowe
 @media (max-width: 850px) {
     body { overflow: hidden; height: 100vh; padding: 0; }
     #game-board { flex-direction: column; height: 100%; padding: 0; gap: 0; }
-    #game-status-banner {
-        position: fixed;
-        top: 0; left: 0; right: 0;
-        z-index: 100;
-        margin: 0;
-        border-radius: 0;
-        font-size: 1.2em;
-        padding: 8px;
-    }
-    #mobile-scroll-container {
-        display: flex;
-        flex-grow: 1;
-        overflow-x: auto;
-        scroll-snap-type: x mandatory;
-        -webkit-overflow-scrolling: touch;
-        padding-top: 50px; /* Space for the fixed banner */
-    }
-    #left-column, #center-column, #right-column {
-        flex: 0 0 100%;
-        width: 100%;
-        max-height: 100%;
-        box-sizing: border-box;
-        padding: 15px;
-        scroll-snap-align: center;
-        overflow-y: auto;
-    }
+    #game-status-banner { position: fixed; top: 0; left: 0; right: 0; z-index: 100; margin: 0; border-radius: 0; font-size: 1.2em; padding: 8px; }
+    #mobile-scroll-container { display: flex; flex-grow: 1; overflow-x: auto; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; padding-top: 50px; }
+    #left-column, #center-column, #right-column { flex: 0 0 100%; width: 100%; max-height: 100%; box-sizing: border-box; padding: 15px; scroll-snap-align: center; overflow-y: auto; }
     #center-column { border: none; background: transparent; }
     .modal { position: fixed; }
     .card-container { justify-content: center; }
@@ -281,24 +233,7 @@ button:disabled { background-color: #555; border-color: #777; cursor: not-allowe
     .player-slot-info .stats { font-size: 1em; }
     .card { width: 90px; height: 126px; }
     .score-box span { font-size: 2em; }
-    #page-indicator {
-        display: flex;
-        justify-content: center;
-        gap: 10px;
-        position: fixed;
-        bottom: 10px;
-        left: 0;
-        right: 0;
-        z-index: 100;
-    }
-    .dot {
-        width: 10px;
-        height: 10px;
-        border-radius: 50%;
-        background-color: rgba(255, 255, 255, 0.4);
-        transition: background-color 0.3s ease;
-    }
-    .dot.active {
-        background-color: white;
-    }
+    #page-indicator { display: flex; justify-content: center; gap: 10px; position: fixed; bottom: 10px; left: 0; right: 0; z-index: 100; }
+    .dot { width: 10px; height: 10px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.4); transition: background-color 0.3s ease; }
+    .dot.active { background-color: white; }
 }

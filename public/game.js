@@ -66,7 +66,6 @@ window.addEventListener('DOMContentLoaded', () => {
              renderGameBoard(gs);
         }
 
-        // ADDED: If game becomes un-paused, hide the AFK modal
         const afkModal = document.getElementById('afk-notification-modal');
         if (!gs.isPaused && !afkModal.classList.contains('hidden')) {
             afkModal.style.display = 'none';
@@ -79,28 +78,34 @@ window.addEventListener('DOMContentLoaded', () => {
         document.getElementById('scoreboard-title').textContent = `Round ${gs.roundNumber} Scores`;
         const preview = document.getElementById('next-round-preview');
         const nextRoundInfo = gs.nextRoundInfo;
+        
+        // MODIFIED: Build the "Dealer's Announcement Plaque"
         if (nextRoundInfo && nextRoundInfo.nextNumCards > 0) {
-            preview.style.display = 'flex';
+            preview.style.display = 'block';
+            const dealerIcon = `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="45" fill="#f5f5dc" stroke="#4a2c2a" stroke-width="5"></circle><text x="50" y="58" font-size="20" text-anchor="middle" fill="#4a2c2a" font-weight="bold">DEALER</text></svg>`;
+            const cardsIcon = `<svg viewBox="0 0 640 512"><path d="M624 32H16C7.16 32 0 39.16 0 48v32c0 8.84 7.16 16 16 16h608c8.84 0 16-7.16 16-16V48c0-8.84-7.16-16-16-16zm0 128H16c-8.84 0-16 7.16-16 16v32c0 8.84 7.16 16 16 16h608c8.84 0 16-7.16 16-16v-32c0-8.84-7.16-16-16-16zm0 128H16c-8.84 0-16 7.16-16 16v32c0 8.84 7.16 16 16 16h608c8.84 0 16-7.16 16-16v-32c0-8.84-7.16-16-16-16z"/></svg>`;
+            const trumpCardHTML = nextRoundInfo.nextTrumpSuit === 'No Trump' 
+                ? `<div class="suit-icon no-trump-icon">NT</div><div class="suit-name">No Trump</div>`
+                : `<img src="/cards/suit_${nextRoundInfo.nextTrumpSuit.toLowerCase()}.svg" class="suit-icon" alt="${nextRoundInfo.nextTrumpSuit}"><div class="suit-name">${nextRoundInfo.nextTrumpSuit} Trump</div>`;
+
             preview.innerHTML = `
-                <div class="next-round-title">Next Round</div>
-                <div class="next-round-detail">Dealer: ${nextRoundInfo.nextDealerName}</div>
-                <div class="next-round-detail">Cards: ${nextRoundInfo.nextNumCards}</div>
-                <div class="next-round-trump">
-                    ${getSuitSymbol(nextRoundInfo.nextTrumpSuit, true)}
-                    <span>${nextRoundInfo.nextTrumpSuit === 'No Trump' ? '' : nextRoundInfo.nextTrumpSuit} Trump</span>
+                <div class="plaque-title">Next Round</div>
+                <div class="trump-reveal-card">${trumpCardHTML}</div>
+                <div class="next-round-details-grid">
+                    <div class="next-round-detail-item">${dealerIcon}<span>${nextRoundInfo.nextDealerName}</span></div>
+                    <div class="next-round-detail-item">${cardsIcon}<span>${nextRoundInfo.nextNumCards} Cards</span></div>
                 </div>
             `;
         } else {
             preview.style.display = 'none';
         }
+
         const myPlayer = gs.players.find(p => p.playerId === myPersistentPlayerId);
         const hostControls = document.getElementById('host-round-end-controls');
         const playerControls = document.getElementById('player-round-end-controls');
         if (myPlayer && myPlayer.isHost) {
             hostControls.style.display = 'flex';
             playerControls.style.display = 'none';
-            document.getElementById('start-next-round-btn').textContent = 'Start Next Round';
-            document.getElementById('end-game-from-modal-btn').textContent = 'End Game';
         } else {
             hostControls.style.display = 'none';
             playerControls.style.display = 'flex';
@@ -235,7 +240,6 @@ window.addEventListener('DOMContentLoaded', () => {
     socket.on('promptForBid', ({ maxBid }) => { const actionBanner = document.getElementById('action-banner'); const bidInput = document.getElementById('bid-input'); document.getElementById('action-banner-text').textContent = 'Your turn to BID!'; document.getElementById('action-banner-input-area').style.display = 'flex'; actionBanner.style.display = 'block'; bidInput.innerHTML = ''; for (let i = 0; i <= maxBid; i++) { const option = document.createElement('option'); option.value = i; option.textContent = i; bidInput.appendChild(option); } });
     socket.on('invalidBid', ({ message }) => showToast(message));
     
-    // MODIFIED: The faulty log call has been removed.
     socket.on('trickWon', ({ winnerName }) => { 
         const overlay = document.getElementById('trick-winner-overlay'); 
         overlay.textContent = `${winnerName} wins the trick!`; 
@@ -403,6 +407,25 @@ window.addEventListener('DOMContentLoaded', () => {
         document.getElementById('my-bid-value').textContent = localPlayer.bid ?? '-';
         document.getElementById('my-tricks-value').textContent = localPlayer.tricksWon;
         document.getElementById('my-score-value').textContent = localPlayer.score;
+        
+        // MODIFIED: Populate the Round Vitals dashboard
+        const vitalsPanel = document.getElementById('round-vitals');
+        const totalBids = gs.players.reduce((sum, p) => p.bid !== null ? sum + p.bid : sum, 0);
+        vitalsPanel.innerHTML = `
+            <div class="vital-stat">
+                <div class="label">Cards</div>
+                <div class="value">${gs.numCardsToDeal}</div>
+            </div>
+            <div class="vital-stat">
+                <div class="label">Total Bids</div>
+                <div class="value">${totalBids}/${gs.numCardsToDeal}</div>
+            </div>
+            <div class="vital-stat">
+                <div class="label">Trump</div>
+                <div class="value">${gs.trumpSuit === 'No Trump' ? 'NT' : `<img src="/cards/suit_${gs.trumpSuit.toLowerCase()}.svg" class="trump-icon" />`}</div>
+            </div>
+        `;
+
         const handArea = document.getElementById('local-player-hand-area');
         handArea.innerHTML = '';
         const cardContainer = document.createElement('div');
@@ -424,6 +447,7 @@ window.addEventListener('DOMContentLoaded', () => {
         if (gs.isPaused) {
             actionBanner.style.display = 'none';
         } else if (gs.phase === 'Bidding' && gs.biddingPlayerIndex === myIndex) {
+            // Handled by promptForBid
         } 
         else if (gs.phase === 'Playing' && gs.currentPlayerIndex === myIndex && localPlayer.hand.length > 0) {
             actionText.textContent = 'Your turn to PLAY!';
@@ -461,7 +485,6 @@ window.addEventListener('DOMContentLoaded', () => {
         } else {
             viewLastTrickBtn.style.display = 'none';
         }
-
         renderGameLog(gs);
     }
 
@@ -549,6 +572,36 @@ window.addEventListener('DOMContentLoaded', () => {
         modal.classList.remove('hidden');
     }
 
+    // ADDED: Helper function for the graphical bid/trick display
+    function createBidProgressHTML(player) {
+        if (player.bid === null) {
+            return `<span class="bidding-text">Bidding...</span>`;
+        }
+
+        const bid = player.bid;
+        const tricksWon = player.tricksWon;
+        const isBusted = tricksWon > bid;
+        let iconsHTML = '';
+
+        const iconWon = `<svg class="trick-icon trick-won" viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="#daa520" stroke="#f5f5dc" stroke-width="4"/><path d="M30 50 L45 65 L70 40" stroke="#4a2c2a" stroke-width="8" fill="none" stroke-linecap="round"/></svg>`;
+        const iconBusted = `<svg class="trick-icon trick-busted" viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="#c70039" stroke="#f5f5dc" stroke-width="4"/><path d="M30 30 L70 70 M70 30 L30 70" stroke="#f5f5dc" stroke-width="8" fill="none" stroke-linecap="round"/></svg>`;
+        const iconTarget = `<svg class="trick-icon bid-target" viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="none" stroke="#f5f5dc" stroke-width="4" stroke-dasharray="10 5"/></svg>`;
+
+        if (isBusted) {
+            for (let i = 0; i < tricksWon; i++) iconsHTML += iconBusted;
+        } else {
+            for (let i = 0; i < tricksWon; i++) iconsHTML += iconWon;
+            for (let i = tricksWon; i < bid; i++) iconsHTML += iconTarget;
+        }
+        
+        if (bid === 0 && tricksWon === 0) {
+            return `<svg class="trick-icon trick-won" viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="#daa520" stroke="#f5f5dc" stroke-width="4"/><path d="M30 50 L45 65 L70 40" stroke="#4a2c2a" stroke-width="8" fill="none" stroke-linecap="round"/></svg>`;
+        }
+
+        return iconsHTML;
+    }
+
+
     function createPlayerSlot(player, gs) {
         const slot = document.createElement('div');
         slot.className = 'player-slot';
@@ -580,15 +633,16 @@ window.addEventListener('DOMContentLoaded', () => {
             nameDiv.appendChild(afkButton);
         }
 
-        const statsDiv = document.createElement('div');
-        statsDiv.className = 'stats';
-        statsDiv.textContent = `Bid: ${player.bid ?? '...'} | Won: ${player.tricksWon}`;
-        info.appendChild(statsDiv);
-
+        // MODIFIED: Use new bid progress display
         const scoreDiv = document.createElement('div');
         scoreDiv.className = 'score';
-        scoreDiv.textContent = `Current Score: ${player.score}`;
+        scoreDiv.textContent = `Score: ${player.score}`;
         info.appendChild(scoreDiv);
+
+        const bidProgressDiv = document.createElement('div');
+        bidProgressDiv.className = 'bid-progress-container';
+        bidProgressDiv.innerHTML = createBidProgressHTML(player);
+        info.appendChild(bidProgressDiv);
     
         const cardPlaceholder = document.createElement('div');
         cardPlaceholder.className = 'card-placeholder';

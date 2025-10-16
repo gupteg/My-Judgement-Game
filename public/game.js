@@ -79,7 +79,6 @@ window.addEventListener('DOMContentLoaded', () => {
         const preview = document.getElementById('next-round-preview');
         const nextRoundInfo = gs.nextRoundInfo;
         
-        // MODIFIED: Build the new tile-based "Next Round" stats
         if (nextRoundInfo && nextRoundInfo.nextNumCards > 0) {
             preview.style.display = 'block';
             const trumpCardHTML = nextRoundInfo.nextTrumpSuit === 'No Trump' 
@@ -575,7 +574,6 @@ window.addEventListener('DOMContentLoaded', () => {
         modal.classList.remove('hidden');
     }
 
-    // REVISED: New logic for "NIL" bid and corrected bust display
     function createBidProgressHTML(player) {
         if (player.bid === null) {
             return `<span class="bidding-text">Bidding...</span>`;
@@ -615,13 +613,13 @@ window.addEventListener('DOMContentLoaded', () => {
         const isActivePlayer = (gs.phase === 'Bidding' && gs.players[gs.biddingPlayerIndex]?.playerId === player.playerId) || (gs.phase === 'Playing' && gs.players[gs.currentPlayerIndex]?.playerId === player.playerId);
         if (isActivePlayer && !gs.isPaused) { slot.classList.add('active-player'); }
         
-        // MODIFIED: Restructured for new layout and AFK button placement
+        // MODIFIED: Restructured for the new CSS Grid layout
         const info = document.createElement('div');
         info.className = 'player-slot-info';
-
-        const topRow = document.createElement('div');
-        topRow.className = 'player-slot-top-row';
         
+        const infoStack = document.createElement('div');
+        infoStack.className = 'player-info-stack';
+
         let nameClass = "name";
         let statusText = '';
         if (player.status === 'Disconnected') { nameClass += " disconnected"; statusText = '(Disconnected)'; }
@@ -630,19 +628,12 @@ window.addEventListener('DOMContentLoaded', () => {
         const nameDiv = document.createElement('div');
         nameDiv.className = nameClass;
         nameDiv.textContent = `${player.name} ${statusText}`;
-        topRow.appendChild(nameDiv);
-
-        const bidProgressDiv = document.createElement('div');
-        bidProgressDiv.className = 'bid-progress-container';
-        bidProgressDiv.innerHTML = createBidProgressHTML(player);
-        topRow.appendChild(bidProgressDiv);
+        infoStack.appendChild(nameDiv);
 
         const scoreDiv = document.createElement('div');
         scoreDiv.className = 'score';
         scoreDiv.textContent = `Score: ${player.score}`;
-
-        info.appendChild(topRow);
-        info.appendChild(scoreDiv);
+        infoStack.appendChild(scoreDiv);
 
         const myPlayer = gs.players.find(p => p.playerId === myPersistentPlayerId);
         if (myPlayer && myPlayer.isHost && player.playerId !== myPersistentPlayerId && player.status === 'Active') {
@@ -653,8 +644,15 @@ window.addEventListener('DOMContentLoaded', () => {
                 e.stopPropagation();
                 socket.emit('markPlayerAFK', { playerIdToMark: player.playerId });
             });
-            info.appendChild(afkButton);
+            infoStack.appendChild(afkButton);
         }
+
+        const bidProgressDiv = document.createElement('div');
+        bidProgressDiv.className = 'bid-progress-container';
+        bidProgressDiv.innerHTML = createBidProgressHTML(player);
+        
+        info.appendChild(infoStack);
+        info.appendChild(bidProgressDiv);
     
         const cardPlaceholder = document.createElement('div');
         cardPlaceholder.className = 'card-placeholder';
@@ -772,3 +770,4 @@ window.addEventListener('DOMContentLoaded', () => {
     makeDraggable(document.getElementById('last-trick-modal'));
     makeDraggable(document.getElementById('afk-notification-modal'));
 });
+}

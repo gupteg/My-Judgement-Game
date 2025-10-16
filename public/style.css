@@ -1,6 +1,6 @@
 /* --- 3-COLUMN LAYOUT --- */
 #game-board { height: 100%; display: flex; gap: 15px; position: relative; }
-#left-column { flex: 5; display: flex; flex-direction: column; position: relative; overflow-y: auto; /* ADDED: Makes the entire column scroll */ }
+#left-column { flex: 5; display: flex; flex-direction: column; position: relative; overflow-y: auto; }
 #center-column { flex: 4; display: flex; flex-direction: column; background-color: var(--felt-green); border: 10px solid var(--teak-light); border-radius: 15px; padding: 15px; }
 #right-column { flex: 3; display: flex; flex-direction: column; gap: 15px; overflow-y: auto; }
 #mobile-scroll-container { display: contents; } /* Behaves normally on desktop */
@@ -59,20 +59,51 @@ button:disabled { background-color: #555; border-color: #777; cursor: not-allowe
 .player-slot { background-color: rgba(0,0,0,0.2); border: 3px solid var(--teak-light); border-radius: 8px; padding: 15px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; transition: all 0.3s ease; }
 .player-slot.active-player { border-color: var(--gold-accent); box-shadow: 0 0 15px var(--gold-accent); animation: flashing-border 2s infinite; }
 @keyframes flashing-border { 50% { border-color: var(--light-text); box-shadow: 0 0 15px var(--light-text); } }
-.player-slot-info { text-align: left; flex-grow: 1; display: flex; flex-direction: column; gap: 5px; min-width: 0; }
-.player-slot-top-row { display: flex; align-items: flex-start; gap: 10px; justify-content: flex-start; }
-.player-slot-info .name { font-size: 1.8em; font-weight: bold; word-break: break-word; }
+
+/* REWRITTEN: CSS Grid layout for player info */
+.player-slot-info {
+    flex-grow: 1;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0 15px;
+    align-items: start;
+    min-width: 0;
+}
+.player-info-stack { grid-column: 1; display: flex; flex-direction: column; align-items: flex-start; }
+.player-slot-info .name {
+    font-size: 1.8em;
+    font-weight: bold;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 250px; 
+}
 .player-slot-info .name.disconnected { opacity: 0.6; font-style: italic; }
 .player-slot-info .name.removed { opacity: 0.4; text-decoration: line-through; }
 .player-slot-info .score { font-size: 1.1em; font-weight: bold; }
 
-.bid-progress-container { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; justify-content: flex-start; flex-shrink: 0; }
+.bid-progress-container {
+    grid-column: 2;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    align-items: center;
+    justify-content: flex-start;
+    max-width: 477px; /* (9 coins * 48px) + (8 gaps * 5px) = 472px. Add 5 for safety. */
+}
 .bid-progress-container .bidding-text { font-style: italic; color: #ccc; }
 .trick-icon { width: 48px; height: 48px; transition: all 0.3s ease; }
 .trick-icon.trick-won { animation: coin-pop 0.3s ease-out; }
 @keyframes coin-pop { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 
-.mark-afk-btn { font-size: 0.8em; padding: 2px 8px; margin-top: 5px; background-color: #b8860b; border-color: #daa520; font-weight: normal; align-self: flex-start; margin-left: 2px; }
+.mark-afk-btn {
+    font-size: 0.8em;
+    padding: 2px 8px;
+    margin-top: 5px;
+    background-color: #b8860b;
+    border-color: #daa520;
+    font-weight: normal;
+}
 .mark-afk-btn:hover { background-color: #ffc400; border-color: #f5f5dc; }
 
 .card-placeholder { width: 80px; height: 112px; border: 2px dashed rgba(255,255,255,0.3); border-radius: 6px; position: relative; flex-shrink: 0; }
@@ -172,7 +203,7 @@ button:disabled { background-color: #555; border-color: #777; cursor: not-allowe
     #center-column { border: none; background: var(--felt-green); } 
     .modal { position: fixed; }
     .card-container { justify-content: center; }
-    .player-slot-info .name { font-size: 1.5em; }
+    .player-slot-info .name { font-size: 1.5em; max-width: 150px; }
     .card { width: 80px; height: 112px; }
     .score-box span { font-size: 2em; }
     

@@ -173,6 +173,8 @@ function evaluateTrick() {
     if (winnerData) {
         winnerData.tricksWon++;
         io.emit('trickWon', { winnerName: winnerData.name });
+        // MODIFIED: Server now logs the trick winner.
+        addLog(`🏆 ${winnerData.name} wins the trick!`);
     }
 
     const allHandsEmpty = gameState.players.filter(p => p.status === 'Active').every(p => p.hand.length === 0);
@@ -364,7 +366,6 @@ io.on('connection', (socket) => {
         gameState.pausedForPlayerNames = gameState.players.filter(p => p.status === 'Disconnected').map(p => p.name);
         gameState.pauseEndTime = Date.now() + DISCONNECT_GRACE_PERIOD;
 
-        // ADDED: Notify the specific player they were marked AFK
         io.to(playerToMark.socketId).emit('youWereMarkedAFK');
     
         if (reconnectTimers[playerToMark.playerId]) clearTimeout(reconnectTimers[playerToMark.playerId]);
@@ -375,7 +376,6 @@ io.on('connection', (socket) => {
         io.emit('updateGameState', gameState);
     });
 
-    // ADDED: New listener for when an AFK player signals they are back
     socket.on('playerIsBack', () => {
         if (!gameState || !gameState.isPaused) return;
         const player = gameState.players.find(p => p.socketId === socket.id);

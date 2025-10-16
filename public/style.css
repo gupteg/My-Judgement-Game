@@ -42,7 +42,7 @@ button:disabled { background-color: #555; border-color: #777; cursor: not-allowe
 .score-box { flex-grow: 1; background: var(--teak-dark); border: 2px solid var(--teak-light); border-radius: 8px; padding: 10px; text-align: center; }
 .score-box h4 { margin: 0 0 10px 0; color: var(--gold-accent); }
 .score-box span { font-size: 2.5em; font-weight: bold; }
-#action-banner { margin: 15px 0; padding: 15px; color: var(--teak-dark); font-weight: bold; text-align: center; border-radius: 8px; font-size: 1.5em; display: none; background-color: var(--gold-accent); animation: flashing-banner 1.5s infinite; flex-shrink: 0; /* Prevents banner from shrinking */ }
+#action-banner { margin: 15px 0; padding: 15px; color: var(--teak-dark); font-weight: bold; text-align: center; border-radius: 8px; font-size: 1.5em; display: none; background-color: var(--gold-accent); animation: flashing-banner 1.5s infinite; flex-shrink: 0; }
 @keyframes flashing-banner { 50% { background-color: var(--light-text); } }
 #action-banner-input-area { display: flex; gap: 10px; justify-content: center; align-items: center; margin-top: 10px; }
 #action-banner #bid-input { font-size: 1em; border-radius: 4px; border: 1px solid var(--teak-dark); }
@@ -61,7 +61,7 @@ button:disabled { background-color: #555; border-color: #777; cursor: not-allowe
 @keyframes flashing-border { 50% { border-color: var(--light-text); box-shadow: 0 0 15px var(--light-text); } }
 .player-slot-info { text-align: left; flex-grow: 1; display: flex; flex-direction: column; gap: 5px; overflow: hidden; }
 .player-slot-top-row { display: flex; align-items: flex-start; gap: 10px; }
-.player-slot-info .name { font-size: 1.8em; font-weight: bold; display: flex; align-items: center; flex-shrink: 1; min-width: 0; }
+.player-slot-info .name { font-size: 1.8em; font-weight: bold; flex-grow: 1; /* Allow name to take up space */ word-break: break-word; /* Wrap long names */ }
 .player-slot-info .name.disconnected { opacity: 0.6; font-style: italic; }
 .player-slot-info .name.removed { opacity: 0.4; text-decoration: line-through; }
 .player-slot-info .score { font-size: 1.1em; font-weight: bold; }
@@ -72,7 +72,7 @@ button:disabled { background-color: #555; border-color: #777; cursor: not-allowe
 .trick-icon.trick-won { animation: coin-pop 0.3s ease-out; }
 @keyframes coin-pop { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 
-.mark-afk-btn { font-size: 0.7em; padding: 4px 10px; margin-left: 15px; background-color: #b8860b; border-color: #daa520; font-weight: normal; }
+.mark-afk-btn { font-size: 0.8em; padding: 2px 8px; margin-top: 5px; background-color: #b8860b; border-color: #daa520; font-weight: normal; }
 .mark-afk-btn:hover { background-color: #ffc400; border-color: #f5f5dc; }
 
 .card-placeholder { width: 80px; height: 112px; border: 2px dashed rgba(255,255,255,0.3); border-radius: 6px; position: relative; flex-shrink: 0; }
@@ -129,8 +129,10 @@ button:disabled { background-color: #555; border-color: #777; cursor: not-allowe
 .trump-reveal-card .suit-icon.no-trump-icon { font-size: 2.5em; font-weight: bold; color: var(--dark-text); }
 .trump-reveal-card .suit-name { font-weight: bold; font-size: 1.2em; margin-top: 5px; }
 .next-round-details-grid { display: flex; justify-content: space-around; align-items: center; margin-top: 15px; font-size: 1.1em; }
-.next-round-detail-item { display: flex; align-items: center; gap: 8px; }
-.next-round-detail-item svg { width: 24px; height: 24px; fill: var(--light-text); }
+.next-round-detail-item { display: flex; flex-direction: column; align-items: center; gap: 5px; }
+.detail-tile { background: var(--parchment-bg); color: var(--dark-text); padding: 5px 10px; border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+.detail-tile .label { font-size: 0.8em; font-weight: bold; color: var(--teak-light); }
+.detail-tile .value { font-size: 1.1em; font-weight: bold; }
 
 .score-table { width: 100%; border-collapse: collapse; margin-top: 20px; background-color: var(--teak-light); }
 .score-table th, .score-table td { border: 1px solid var(--teak-dark); padding: 8px; text-align: center; }
@@ -166,6 +168,7 @@ button:disabled { background-color: #555; border-color: #777; cursor: not-allowe
     #game-status-banner { position: fixed; top: 0; left: 0; right: 0; z-index: 100; margin: 0; border-radius: 0; font-size: 1.2em; padding: 8px; }
     #mobile-scroll-container { display: flex; flex-grow: 1; overflow-x: auto; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; padding-top: 50px; }
     #left-column, #center-column, #right-column { flex: 0 0 100%; width: 100%; max-height: 100%; box-sizing: border-box; padding: 15px; scroll-snap-align: center; overflow-y: auto; }
+    #left-column { padding-bottom: 120px; /* Fix for scrolling */ }
     #center-column { border: none; background: transparent; }
     .modal { position: fixed; }
     .card-container { justify-content: center; }

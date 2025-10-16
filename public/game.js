@@ -79,10 +79,9 @@ window.addEventListener('DOMContentLoaded', () => {
         const preview = document.getElementById('next-round-preview');
         const nextRoundInfo = gs.nextRoundInfo;
         
+        // MODIFIED: Build the new tile-based "Next Round" stats
         if (nextRoundInfo && nextRoundInfo.nextNumCards > 0) {
             preview.style.display = 'block';
-            const dealerIcon = `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="45" fill="#f5f5dc" stroke="#4a2c2a" stroke-width="5"></circle><text x="50" y="58" font-size="20" text-anchor="middle" fill="#4a2c2a" font-weight="bold">DEALER</text></svg>`;
-            const cardsIcon = `<svg viewBox="0 0 640 512"><path d="M624 32H16C7.16 32 0 39.16 0 48v32c0 8.84 7.16 16 16 16h608c8.84 0 16-7.16 16-16V48c0-8.84-7.16-16-16-16zm0 128H16c-8.84 0-16 7.16-16 16v32c0 8.84 7.16 16 16 16h608c8.84 0 16-7.16 16-16v-32c0-8.84-7.16-16-16-16zm0 128H16c-8.84 0-16 7.16-16 16v32c0 8.84 7.16 16 16 16h608c8.84 0 16-7.16 16-16v-32c0-8.84-7.16-16-16-16z"/></svg>`;
             const trumpCardHTML = nextRoundInfo.nextTrumpSuit === 'No Trump' 
                 ? `<div class="suit-icon no-trump-icon">NT</div><div class="suit-name">No Trump</div>`
                 : `<img src="/cards/suit_${nextRoundInfo.nextTrumpSuit.toLowerCase()}.svg" class="suit-icon" alt="${nextRoundInfo.nextTrumpSuit}"><div class="suit-name">${nextRoundInfo.nextTrumpSuit} Trump</div>`;
@@ -91,8 +90,18 @@ window.addEventListener('DOMContentLoaded', () => {
                 <div class="plaque-title">Next Round</div>
                 <div class="trump-reveal-card">${trumpCardHTML}</div>
                 <div class="next-round-details-grid">
-                    <div class="next-round-detail-item">${dealerIcon}<span>${nextRoundInfo.nextDealerName}</span></div>
-                    <div class="next-round-detail-item">${cardsIcon}<span>${nextRoundInfo.nextNumCards} Cards</span></div>
+                    <div class="next-round-detail-item">
+                        <div class="detail-tile">
+                            <div class="label">DEALER</div>
+                            <div class="value">${nextRoundInfo.nextDealerName}</div>
+                        </div>
+                    </div>
+                    <div class="next-round-detail-item">
+                        <div class="detail-tile">
+                            <div class="label">CARDS</div>
+                            <div class="value">${nextRoundInfo.nextNumCards}</div>
+                        </div>
+                    </div>
                 </div>
             `;
         } else {
@@ -407,7 +416,6 @@ window.addEventListener('DOMContentLoaded', () => {
         document.getElementById('my-tricks-value').textContent = localPlayer.tricksWon;
         document.getElementById('my-score-value').textContent = localPlayer.score;
         
-        // REVISED: Populate the new separate vital tiles
         const trumpTile = document.getElementById('trump-vitals-tile');
         const cardsTile = document.getElementById('cards-vitals-tile');
         const bidsTile = document.getElementById('bids-vitals-tile');
@@ -567,7 +575,7 @@ window.addEventListener('DOMContentLoaded', () => {
         modal.classList.remove('hidden');
     }
 
-    // REVISED: Updated "Bust" logic
+    // REVISED: New logic for "NIL" bid and corrected bust display
     function createBidProgressHTML(player) {
         if (player.bid === null) {
             return `<span class="bidding-text">Bidding...</span>`;
@@ -581,19 +589,20 @@ window.addEventListener('DOMContentLoaded', () => {
         const iconWon = `<svg class="trick-icon trick-won" viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="#daa520" stroke="#f5f5dc" stroke-width="4"/><path d="M30 50 L45 65 L70 40" stroke="#4a2c2a" stroke-width="8" fill="none" stroke-linecap="round"/></svg>`;
         const iconBusted = `<svg class="trick-icon trick-busted" viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="#c70039" stroke="#f5f5dc" stroke-width="4"/><path d="M30 30 L70 70 M70 30 L30 70" stroke="#f5f5dc" stroke-width="8" fill="none" stroke-linecap="round"/></svg>`;
         const iconTarget = `<svg class="trick-icon bid-target" viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="none" stroke="#f5f5dc" stroke-width="4" stroke-dasharray="10 5"/></svg>`;
+        const iconNil = `<svg class="trick-icon" viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="#808080" stroke="#f5f5dc" stroke-width="4"/><text x="50" y="65" font-size="40" text-anchor="middle" fill="#f5f5dc" font-weight="bold">NIL</text></svg>`;
         
+        if (bid === 0) {
+            if (tricksWon === 0) return iconNil;
+            for (let i = 0; i < tricksWon; i++) iconsHTML += iconBusted;
+            return iconsHTML;
+        }
+
         if (isBusted) {
              for (let i = 0; i < bid; i++) iconsHTML += iconWon; 
              for (let i = 0; i < tricksWon - bid; i++) iconsHTML += iconBusted;
         } else {
              for (let i = 0; i < tricksWon; i++) iconsHTML += iconWon;
              for (let i = tricksWon; i < bid; i++) iconsHTML += iconTarget;
-        }
-        
-        if (bid === 0 && tricksWon === 0 && window.gameState.phase === 'Playing') {
-             return iconTarget; 
-        } else if (bid === 0 && tricksWon === 0) {
-             return iconWon;
         }
 
         return iconsHTML;
@@ -606,7 +615,7 @@ window.addEventListener('DOMContentLoaded', () => {
         const isActivePlayer = (gs.phase === 'Bidding' && gs.players[gs.biddingPlayerIndex]?.playerId === player.playerId) || (gs.phase === 'Playing' && gs.players[gs.currentPlayerIndex]?.playerId === player.playerId);
         if (isActivePlayer && !gs.isPaused) { slot.classList.add('active-player'); }
         
-        // MODIFIED: Restructured for horizontal layout
+        // MODIFIED: Restructured for new layout and AFK button placement
         const info = document.createElement('div');
         info.className = 'player-slot-info';
 
@@ -628,24 +637,24 @@ window.addEventListener('DOMContentLoaded', () => {
         bidProgressDiv.innerHTML = createBidProgressHTML(player);
         topRow.appendChild(bidProgressDiv);
 
-        const myPlayer = gs.players.find(p => p.playerId === myPersistentPlayerId);
-        if (myPlayer && myPlayer.isHost && player.playerId !== myPersistentPlayerId && player.status === 'Active') {
-            const afkButton = document.createElement('button');
-            afkButton.className = 'mark-afk-btn';
-            afkButton.textContent = 'Mark AFK';
-            afkButton.addEventListener('click', (e) => {
-                e.stopPropagation();
-                socket.emit('markPlayerAFK', { playerIdToMark: player.playerId });
-            });
-            nameDiv.appendChild(afkButton);
-        }
-
         const scoreDiv = document.createElement('div');
         scoreDiv.className = 'score';
         scoreDiv.textContent = `Score: ${player.score}`;
 
         info.appendChild(topRow);
         info.appendChild(scoreDiv);
+
+        const myPlayer = gs.players.find(p => p.playerId === myPersistentPlayerId);
+        if (myPlayer && myPlayer.isHost && player.playerId !== myPersistentPlayerId && player.status === 'Active') {
+            const afkButton = document.createElement('button');
+            afkButton.className = 'mark-afk-btn';
+            afkButton.textContent = 'AFK';
+            afkButton.addEventListener('click', (e) => {
+                e.stopPropagation();
+                socket.emit('markPlayerAFK', { playerIdToMark: player.playerId });
+            });
+            info.appendChild(afkButton);
+        }
     
         const cardPlaceholder = document.createElement('div');
         cardPlaceholder.className = 'card-placeholder';

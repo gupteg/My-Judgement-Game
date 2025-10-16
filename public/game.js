@@ -79,7 +79,6 @@ window.addEventListener('DOMContentLoaded', () => {
         const preview = document.getElementById('next-round-preview');
         const nextRoundInfo = gs.nextRoundInfo;
         
-        // MODIFIED: Build the "Dealer's Announcement Plaque"
         if (nextRoundInfo && nextRoundInfo.nextNumCards > 0) {
             preview.style.display = 'block';
             const dealerIcon = `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="45" fill="#f5f5dc" stroke="#4a2c2a" stroke-width="5"></circle><text x="50" y="58" font-size="20" text-anchor="middle" fill="#4a2c2a" font-weight="bold">DEALER</text></svg>`;
@@ -408,21 +407,27 @@ window.addEventListener('DOMContentLoaded', () => {
         document.getElementById('my-tricks-value').textContent = localPlayer.tricksWon;
         document.getElementById('my-score-value').textContent = localPlayer.score;
         
-        // MODIFIED: Populate the Round Vitals dashboard
+        // REVISED: Populate the new two-tiered Round Vitals dashboard
         const vitalsPanel = document.getElementById('round-vitals');
         const totalBids = gs.players.reduce((sum, p) => p.bid !== null ? sum + p.bid : sum, 0);
+        const trumpContent = gs.trumpSuit === 'No Trump' 
+            ? `<div class="no-trump-value">NO TRUMP</div>` 
+            : `<img src="/cards/suit_${gs.trumpSuit.toLowerCase()}.svg" class="trump-icon" />`;
+
         vitalsPanel.innerHTML = `
-            <div class="vital-stat">
-                <div class="label">Cards</div>
-                <div class="value">${gs.numCardsToDeal}</div>
+            <div class="vital-stats-row">
+                <div class="vital-stat">
+                    <div class="label">Cards Dealt</div>
+                    <div class="value">${gs.numCardsToDeal}</div>
+                </div>
+                <div class="vital-stat">
+                    <div class="label">Current Total Bids</div>
+                    <div class="value">${totalBids}/${gs.numCardsToDeal}</div>
+                </div>
             </div>
-            <div class="vital-stat">
-                <div class="label">Total Bids</div>
-                <div class="value">${totalBids}/${gs.numCardsToDeal}</div>
-            </div>
-            <div class="vital-stat">
+            <div class="vital-trump-area">
                 <div class="label">Trump</div>
-                <div class="value">${gs.trumpSuit === 'No Trump' ? 'NT' : `<img src="/cards/suit_${gs.trumpSuit.toLowerCase()}.svg" class="trump-icon" />`}</div>
+                ${trumpContent}
             </div>
         `;
 
@@ -520,15 +525,15 @@ window.addEventListener('DOMContentLoaded', () => {
                 banner.classList.add('playing-phase');
                 break;
             case 'TrickReview':
-                const updateTrickTimer = () => {
+                const updateTimer = () => {
                     const remaining = Math.max(0, Math.round((gs.nextTrickReviewEnd - Date.now()) / 1000));
                     const trickWinner = gs.players.find(p => p.playerId === gs.trickWinnerId);
                     const winnerName = trickWinner ? trickWinner.name : '...';
                     banner.innerHTML = `Next trick starts by <strong>${winnerName}</strong> in ${remaining}s`;
                     if (remaining <= 0) clearInterval(trickReviewInterval);
                 };
-                updateTrickTimer();
-                trickReviewInterval = setInterval(updateTrickTimer, 1000);
+                updateTimer();
+                trickReviewInterval = setInterval(updateTimer, 1000);
                 break;
             case 'RoundOver':
                 banner.innerHTML = `Round ${gs.roundNumber} over; Waiting for the Host to start Round ${gs.roundNumber + 1}`;
@@ -572,7 +577,7 @@ window.addEventListener('DOMContentLoaded', () => {
         modal.classList.remove('hidden');
     }
 
-    // ADDED: Helper function for the graphical bid/trick display
+    // REVISED: Updated logic for the graphical bid/trick display
     function createBidProgressHTML(player) {
         if (player.bid === null) {
             return `<span class="bidding-text">Bidding...</span>`;
@@ -586,16 +591,22 @@ window.addEventListener('DOMContentLoaded', () => {
         const iconWon = `<svg class="trick-icon trick-won" viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="#daa520" stroke="#f5f5dc" stroke-width="4"/><path d="M30 50 L45 65 L70 40" stroke="#4a2c2a" stroke-width="8" fill="none" stroke-linecap="round"/></svg>`;
         const iconBusted = `<svg class="trick-icon trick-busted" viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="#c70039" stroke="#f5f5dc" stroke-width="4"/><path d="M30 30 L70 70 M70 30 L30 70" stroke="#f5f5dc" stroke-width="8" fill="none" stroke-linecap="round"/></svg>`;
         const iconTarget = `<svg class="trick-icon bid-target" viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="none" stroke="#f5f5dc" stroke-width="4" stroke-dasharray="10 5"/></svg>`;
-
-        if (isBusted) {
-            for (let i = 0; i < tricksWon; i++) iconsHTML += iconBusted;
-        } else {
-            for (let i = 0; i < tricksWon; i++) iconsHTML += iconWon;
-            for (let i = tricksWon; i < bid; i++) iconsHTML += iconTarget;
+        
+        if (bid === 0 && tricksWon > 0) { // Special bust case for zero bid
+             for (let i = 0; i < tricksWon; i++) iconsHTML += iconBusted;
+        } else if (isBusted) {
+             for (let i = 0; i < bid; i++) iconsHTML += iconWon; // Show correct tricks
+             for (let i = 0; i < tricksWon - bid; i++) iconsHTML += iconBusted; // Show busted tricks
+        } else { // Not busted
+             for (let i = 0; i < tricksWon; i++) iconsHTML += iconWon;
+             for (let i = tricksWon; i < bid; i++) iconsHTML += iconTarget;
         }
         
-        if (bid === 0 && tricksWon === 0) {
-            return `<svg class="trick-icon trick-won" viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="#daa520" stroke="#f5f5dc" stroke-width="4"/><path d="M30 50 L45 65 L70 40" stroke="#4a2c2a" stroke-width="8" fill="none" stroke-linecap="round"/></svg>`;
+        // Handle successful 0 bid display (if round is not over, it's just an empty target state)
+        if (bid === 0 && tricksWon === 0 && window.gameState.phase === 'Playing') {
+             return iconTarget; // Show one target icon for a zero bid
+        } else if (bid === 0 && tricksWon === 0) {
+             return iconWon; // If bidding/review/end of round, it's successful so far
         }
 
         return iconsHTML;
@@ -633,7 +644,6 @@ window.addEventListener('DOMContentLoaded', () => {
             nameDiv.appendChild(afkButton);
         }
 
-        // MODIFIED: Use new bid progress display
         const scoreDiv = document.createElement('div');
         scoreDiv.className = 'score';
         scoreDiv.textContent = `Score: ${player.score}`;

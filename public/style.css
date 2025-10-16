@@ -6,7 +6,7 @@
 #mobile-scroll-container { display: contents; } /* Behaves normally on desktop */
 #page-indicator { display: none; } /* Hidden on desktop */
 
-:root { --teak-dark: #4a2c2a; --teak-light: #8c5b4f; --felt-green: #004d25; --gold-accent: #daa520; --light-text: #f5f5dc; --parchment-bg: #f5f5dc; --dark-text: #4a2c2a; --busted-red: #c70039; }
+:root { --teak-dark: #4a2c2a; --teak-light: #8c5b4f; --felt-green: #004d25; --gold-accent: #daa520; --light-text: #f5f5dc; --parchment-bg: #D2B48C; --dark-text: #4a2c2a; --busted-red: #c70039; }
 body { font-family: 'Georgia', 'Times New Roman', Times, serif; background-color: var(--teak-dark); background-image: url('https://www.transparenttextures.com/patterns/wood-pattern.png'); padding: 15px; margin: 0; height: 100vh; box-sizing: border-box; color: var(--light-text); overflow: hidden; }
 
 #join-screen, #lobby-screen { background-color: rgba(0,0,0,0.6); border: 2px solid var(--gold-accent); padding: 30px; border-radius: 10px; max-width: 450px; margin: 50px auto; text-align: center; box-shadow: 0 5px 25px rgba(0,0,0,0.5); }
@@ -65,10 +65,9 @@ button:disabled { background-color: #555; border-color: #777; cursor: not-allowe
 .player-slot-info .name.removed { opacity: 0.4; text-decoration: line-through; }
 .player-slot-info .score { font-size: 1.1em; font-weight: bold; }
 
-/* ADDED: Styles for the Bid/Trick progress display */
-.bid-progress-container { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; min-height: 24px; }
+.bid-progress-container { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; min-height: 28px; }
 .bid-progress-container .bidding-text { font-style: italic; color: #ccc; }
-.trick-icon { width: 20px; height: 20px; transition: all 0.3s ease; }
+.trick-icon { width: 24px; height: 24px; transition: all 0.3s ease; }
 .trick-icon.trick-won { animation: coin-pop 0.3s ease-out; }
 @keyframes coin-pop { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 
@@ -90,26 +89,37 @@ button:disabled { background-color: #555; border-color: #777; cursor: not-allowe
 #trump-info-panel, #lead-suit-info-panel { text-align: center; margin-top: 15px; padding: 10px; }
 #trump-info-panel h4, #lead-suit-info-panel h4 { margin: 0 0 10px 0; color: var(--teak-light); border-bottom: 1px solid var(--teak-light); padding-bottom: 8px; }
 .trump-display { display: flex; flex-direction: column; align-items: center; gap: 8px; }
-#trump-info-panel img, #lead-suit-info-panel img { width: 90px; height: 90px; } /* Increased size */
+#trump-info-panel img, #lead-suit-info-panel img { width: 90px; height: 90px; }
 .trump-text { font-weight: bold; font-size: 1.2em; color: var(--dark-text); }
 .no-trump { font-size: 2em; font-weight: bold; padding: 20px 0; }
 
-/* ADDED: Styles for the new "Round Vitals" player dashboard */
+/* REDESIGNED: The two-tiered "Round Vitals" dashboard */
 #round-vitals {
     background: rgba(0,0,0,0.3);
     border-radius: 8px;
-    padding: 10px;
+    padding: 15px;
     margin-bottom: 15px;
     display: flex;
-    justify-content: space-around;
-    align-items: center;
+    flex-direction: column;
     gap: 15px;
+}
+.vital-stats-row {
+    display: flex;
+    justify-content: space-around;
+    width: 100%;
 }
 .vital-stat { text-align: center; }
 .vital-stat .label { font-size: 0.9em; color: #ccc; }
 .vital-stat .value { font-size: 1.4em; font-weight: bold; color: var(--gold-accent); }
-.vital-stat .trump-icon { width: 40px; height: 40px; }
-
+.vital-trump-area {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+}
+.vital-trump-area .label { font-size: 1.1em; font-weight: bold; color: var(--gold-accent); }
+.vital-trump-area .trump-icon { width: 50px; height: 50px; }
+.vital-trump-area .no-trump-value { font-size: 1.8em; font-weight: bold; color: var(--light-text); }
 
 #view-last-trick-btn { width: 100%; box-sizing: border-box; font-size: 1em; padding: 10px; }
 
@@ -130,66 +140,15 @@ button:disabled { background-color: #555; border-color: #777; cursor: not-allowe
 .modal-content .pause-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.75); display: flex; align-items: center; justify-content: center; color: var(--gold-accent); font-size: 1.5em; font-weight: bold; z-index: 10; border-radius: 8px; text-align: center; padding: 20px; box-sizing: border-box; }
 #lobby-return-countdown { margin-top: 20px; padding-top: 15px; border-top: 1px solid var(--teak-light); font-size: 1.2em; font-weight: bold; color: var(--gold-accent); }
 
-/* REDESIGNED: The "Dealer's Announcement Plaque" */
-#next-round-preview {
-    margin-top: 20px;
-    padding: 15px;
-    background: var(--teak-light);
-    border: 3px solid var(--teak-dark);
-    box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
-    border-radius: 10px;
-}
-.plaque-title {
-    font-size: 1.8em;
-    font-weight: bold;
-    color: var(--gold-accent);
-    text-shadow: 1px 1px 2px var(--teak-dark);
-    margin-bottom: 15px;
-}
-.trump-reveal-card {
-    background: var(--parchment-bg);
-    color: var(--dark-text);
-    padding: 15px;
-    margin: 10px auto;
-    border-radius: 8px;
-    width: 80%;
-    max-width: 250px;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
-    border: 1px solid var(--teak-dark);
-}
-.trump-reveal-card .suit-icon {
-    width: 60px;
-    height: 60px;
-    margin: 0 auto;
-}
-.trump-reveal-card .suit-icon.no-trump-icon {
-    font-size: 2.5em;
-    font-weight: bold;
-    color: var(--dark-text);
-}
-.trump-reveal-card .suit-name {
-    font-weight: bold;
-    font-size: 1.2em;
-    margin-top: 5px;
-}
-.next-round-details-grid {
-    display: flex;
-    justify-content: space-around;
-    align-items: center;
-    margin-top: 15px;
-    font-size: 1.1em;
-}
-.next-round-detail-item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-.next-round-detail-item svg {
-    width: 24px;
-    height: 24px;
-    fill: var(--light-text);
-}
-
+#next-round-preview { margin-top: 20px; padding: 15px; background: var(--teak-light); border: 3px solid var(--teak-dark); box-shadow: inset 0 0 10px rgba(0,0,0,0.5); border-radius: 10px; }
+.plaque-title { font-size: 1.8em; font-weight: bold; color: var(--gold-accent); text-shadow: 1px 1px 2px var(--teak-dark); margin-bottom: 15px; }
+.trump-reveal-card { background: var(--parchment-bg); color: var(--dark-text); padding: 15px; margin: 10px auto; border-radius: 8px; width: 80%; max-width: 250px; box-shadow: 0 4px 8px rgba(0,0,0,0.3); border: 1px solid var(--teak-dark); }
+.trump-reveal-card .suit-icon { width: 60px; height: 60px; margin: 0 auto; }
+.trump-reveal-card .suit-icon.no-trump-icon { font-size: 2.5em; font-weight: bold; color: var(--dark-text); }
+.trump-reveal-card .suit-name { font-weight: bold; font-size: 1.2em; margin-top: 5px; }
+.next-round-details-grid { display: flex; justify-content: space-around; align-items: center; margin-top: 15px; font-size: 1.1em; }
+.next-round-detail-item { display: flex; align-items: center; gap: 8px; }
+.next-round-detail-item svg { width: 24px; height: 24px; fill: var(--light-text); }
 
 .score-table { width: 100%; border-collapse: collapse; margin-top: 20px; background-color: var(--teak-light); }
 .score-table th, .score-table td { border: 1px solid var(--teak-dark); padding: 8px; text-align: center; }
@@ -201,7 +160,6 @@ button:disabled { background-color: #555; border-color: #777; cursor: not-allowe
 #toast-notification.show { opacity: 1; transform: translate(-50%, 10px); }
 .hidden { display: none !important; }
 
-/* Styling for Last Trick Modal */
 #last-trick-modal .modal-content { max-width: 450px; }
 .close-btn { position: absolute; top: 50%; transform: translateY(-50%); right: 20px; font-size: 2em; font-weight: bold; color: var(--light-text); cursor: pointer; transition: color 0.2s ease; }
 .close-btn:hover { color: var(--gold-accent); }
@@ -230,7 +188,6 @@ button:disabled { background-color: #555; border-color: #777; cursor: not-allowe
     .modal { position: fixed; }
     .card-container { justify-content: center; }
     .player-slot-info .name { font-size: 1.5em; }
-    .player-slot-info .stats { font-size: 1em; }
     .card { width: 90px; height: 126px; }
     .score-box span { font-size: 2em; }
     #page-indicator { display: flex; justify-content: center; gap: 10px; position: fixed; bottom: 10px; left: 0; right: 0; z-index: 100; }

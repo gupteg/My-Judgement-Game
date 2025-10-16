@@ -65,6 +65,13 @@ window.addEventListener('DOMContentLoaded', () => {
         } else {
              renderGameBoard(gs);
         }
+
+        // ADDED: If game becomes un-paused, hide the AFK modal
+        const afkModal = document.getElementById('afk-notification-modal');
+        if (!gs.isPaused && !afkModal.classList.contains('hidden')) {
+            afkModal.style.display = 'none';
+            afkModal.classList.add('hidden');
+        }
     });
 
     function showScoreboard(gs) {
@@ -216,11 +223,26 @@ window.addEventListener('DOMContentLoaded', () => {
                 lastTrickModal.classList.add('hidden');
             }
         });
+
+        // ADDED: Listener for the "I'm Back" button in the AFK modal
+        const afkModal = document.getElementById('afk-notification-modal');
+        document.getElementById('im-back-btn').addEventListener('click', () => {
+            socket.emit('playerIsBack');
+            afkModal.style.display = 'none';
+            afkModal.classList.add('hidden');
+        });
     }
 
     socket.on('promptForBid', ({ maxBid }) => { const actionBanner = document.getElementById('action-banner'); const bidInput = document.getElementById('bid-input'); document.getElementById('action-banner-text').textContent = 'Your turn to BID!'; document.getElementById('action-banner-input-area').style.display = 'flex'; actionBanner.style.display = 'block'; bidInput.innerHTML = ''; for (let i = 0; i <= maxBid; i++) { const option = document.createElement('option'); option.value = i; option.textContent = i; bidInput.appendChild(option); } });
     socket.on('invalidBid', ({ message }) => showToast(message));
     socket.on('trickWon', ({ winnerName }) => { const overlay = document.getElementById('trick-winner-overlay'); overlay.textContent = `${winnerName} wins the trick!`; overlay.classList.add('show'); addMessageToGameLog(`🏆 ${winnerName} wins the trick!`); setTimeout(() => overlay.classList.remove('show'), 2900); });
+
+    // ADDED: New listener to show the AFK modal
+    socket.on('youWereMarkedAFK', () => {
+        const afkModal = document.getElementById('afk-notification-modal');
+        afkModal.style.display = 'flex';
+        afkModal.classList.remove('hidden');
+    });
 
     socket.on('joinSuccess', ({ playerId, lobby }) => {
         myPersistentPlayerId = playerId;
@@ -311,7 +333,8 @@ window.addEventListener('DOMContentLoaded', () => {
     });
 
     socket.on('announce', (message) => showToast(message));
-    socket.on('gameLog', (message) => addMessageToGameLog(message));
+    // REMOVED: Old gameLog listener, as logs are now part of gameState
+    // socket.on('gameLog', (message) => addMessageToGameLog(message)); 
 
     function renderLobby(players) {
         const me = players.find(p => p.playerId === myPersistentPlayerId);
@@ -435,6 +458,9 @@ window.addEventListener('DOMContentLoaded', () => {
         } else {
             viewLastTrickBtn.style.display = 'none';
         }
+
+        // ADDED: Render game log from gameState
+        renderGameLog(gs);
     }
 
     function renderScoreboard(gs) { const container = document.getElementById('scoreboard-table-container'); container.innerHTML = ''; const table = document.createElement('table'); table.className = 'score-table'; let headerHtml = '<thead><tr><th>Round Details</th>'; gs.players.forEach(p => headerHtml += `<th>${p.name}</th>`); headerHtml += '</tr></thead>'; let bodyHtml = '<tbody>'; for (let i = 0; i < gs.roundNumber; i++) { const round = i + 1; const cardsDealt = gs.maxRounds - i; const trumpCycle = ['Spades', 'Hearts', 'Diamonds', 'Clubs', 'No Trump']; const trump = trumpCycle[i % 5]; bodyHtml += `<tr><td>R${round} (${cardsDealt} cards, ${getSuitSymbol(trump)})</td>`; gs.players.forEach(p => { const score = p.scoreHistory[i]; if (score === null) { bodyHtml += `<td>—</td>`; } else if (score !== undefined) { const isCorrect = score > 0; bodyHtml += `<td class="${isCorrect ? 'correct-bid' : 'incorrect-bid'}">${score > 0 ? '+' : ''}${score}</td>`; } else { bodyHtml += `<td>-</td>`; } }); bodyHtml += '</tr>'; } bodyHtml += '</tbody>'; let footerHtml = '<tfoot><tr><td><strong>Total</strong></td>'; gs.players.forEach(p => footerHtml += `<td><strong>${p.score}</strong></td>`); footerHtml += '</tr></tfoot>'; table.innerHTML = headerHtml + bodyHtml + footerHtml; container.appendChild(table); }
@@ -587,12 +613,25 @@ window.addEventListener('DOMContentLoaded', () => {
     function createCardElement(card) { const cardEl = document.createElement('div'); cardEl.className = 'card'; cardEl.dataset.card = `${card.suit.toLowerCase()}_${rankMap[card.rank]}`; const rankName = rankMap[card.rank]; const suitName = card.suit.toLowerCase(); const imageName = `${suitName}_${rankName}.svg`; cardEl.style.backgroundImage = `url('/cards/${imageName}')`; return cardEl; }
     function getSuitSymbol(suit, isImage = false) { const symbols = { 'Spades': '♠️', 'Hearts': '♥️', 'Diamonds': '♦️', 'Clubs': '♣️', 'No Trump': 'NT' }; if (isImage) { if (suit === 'No Trump') return `<div class="no-trump">NO TRUMP</div>`; const suitName = suit?.toLowerCase(); if (!suitName) return '---'; return `<img src="/cards/suit_${suitName}.svg" alt="${suit}">`; } return symbols[suit] || suit; }
     const toastNotification = document.getElementById('toast-notification'); function showToast(message) { toastNotification.textContent = message; toastNotification.classList.add('show'); setTimeout(() => toastNotification.classList.remove('show'), 3000); }
-    const gameLogList = document.getElementById('game-log-list'); function addMessageToGameLog(message) { const li = document.createElement('li'); li.innerHTML = message; gameLogList.prepend(li); if (gameLogList.children.length > 12) { gameLogList.lastChild.remove(); } }
+    
+    // REVISED: Game log rendering from gameState
+    function renderGameLog(gs) {
+        const gameLogList = document.getElementById('game-log-list');
+        gameLogList.innerHTML = '';
+        if (gs.logHistory) {
+            const logsToDisplay = gs.logHistory.slice(-12); // Get the last 12 logs
+            logsToDisplay.forEach(message => {
+                const li = document.createElement('li');
+                li.innerHTML = message;
+                gameLogList.prepend(li); // Prepend to keep newest on top
+            });
+        }
+    }
     
     // --- Draggable Modal Functionality ---
     function makeDraggable(modal) {
         const modalContent = modal.querySelector('.modal-content');
-        const header = modal.querySelector('.modal-header'); // MODIFIED: Target the specific header class
+        const header = modal.querySelector('.modal-header'); 
         if (!header) return;
 
         let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
@@ -666,4 +705,5 @@ window.addEventListener('DOMContentLoaded', () => {
     makeDraggable(document.getElementById('scoreboard-modal'));
     makeDraggable(document.getElementById('confirm-end-game-modal'));
     makeDraggable(document.getElementById('last-trick-modal'));
+    makeDraggable(document.getElementById('afk-notification-modal'));
 });

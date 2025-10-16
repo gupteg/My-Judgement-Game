@@ -20,6 +20,13 @@ const SUITS = ['Spades', 'Hearts', 'Diamonds', 'Clubs'];
 const RANKS = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
 const RANK_VALUES = { '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8, '9': 9, '10': 10, 'J': 11, 'Q': 12, 'K': 13, 'A': 14 };
 
+// ADDED: Centralized function to add logs to gameState
+function addLog(message) {
+    if (!gameState) return;
+    gameState.logHistory.push(message);
+    io.emit('gameLog', message); // Still emit for real-time notification, but client will rely on gameState
+}
+
 function startNextTrick() {
     if (!gameState || gameState.isPaused || gameState.phase !== 'TrickReview') return;
 
@@ -65,7 +72,7 @@ function setupGame(lobbyPlayers) {
     return {
         players: gamePlayers, roundNumber: 0, maxRounds: maxCards, dealerIndex: -1, numCardsToDeal: 0,
         trumpSuit: null, leadSuit: null, currentTrick: [], currentWinningPlayerId: null, trickWinnerId: null,
-        lastCompletedTrick: null,
+        lastCompletedTrick: null, logHistory: [], // MODIFIED: Added log history to gameState
         isPaused: false, pausedForPlayerNames: [], pauseEndTime: null,
         phase: 'Bidding', nextRoundInfo: null, nextTrickReviewEnd: null,
     };
@@ -90,7 +97,7 @@ function startNewRound() {
         phase: 'Bidding', nextRoundInfo: null, biddingPlayerIndex: biddingPlayerIndex,
         currentPlayerIndex: null,
     });
-    io.emit('gameLog', `Round ${gameState.roundNumber} begins. Cards: ${gameState.numCardsToDeal}. Trump: ${gameState.trumpSuit}.`);
+    addLog(`Round ${gameState.roundNumber} begins. Cards: ${gameState.numCardsToDeal}. Trump: ${gameState.trumpSuit}.`);
     io.emit('updateGameState', gameState);
     const firstBidder = gameState.players[biddingPlayerIndex];
     if (firstBidder) { io.to(firstBidder.socketId).emit('promptForBid', { maxBid: gameState.numCardsToDeal }); }
@@ -115,7 +122,7 @@ function handleEndOfRound() {
         nextTrumpSuit: (nextNumCards > 0) ? trumpCycle[(nextRoundNumber - 1) % 5] : 'None',
         nextDealerName: nextDealer ? nextDealer.name : 'N/A'
     };
-    io.emit('gameLog', `🏁 Round ${gameState.roundNumber} has ended. Scores calculated.`);
+    addLog(`🏁 Round ${gameState.roundNumber} has ended. Scores calculated.`);
     io.emit('updateGameState', gameState);
 }
 
@@ -126,21 +133,16 @@ function handleGameOver() {
         const eligiblePlayers = gameState.players.filter(p => p.status !== 'Removed');
         const highestScore = Math.max(-Infinity, ...eligiblePlayers.map(p => p.score));
         const winners = eligiblePlayers.filter(p => p.score === highestScore).map(p => ({ name: p.name, score: p.score }));
-        io.emit('gameLog', `GAME OVER!`);
+        addLog(`GAME OVER!`);
         io.emit('finalGameOver', { gameState, winners });
 
         if (gameOverCleanupTimer) clearTimeout(gameOverCleanupTimer);
         gameOverCleanupTimer = setTimeout(() => {
             if (gameState) {
-                console.log('Game over state timed out. Resetting to lobby.');
                 const finalPlayers = gameState.players.filter(p => p.status !== 'Removed');
                 players = finalPlayers.map(p => ({
-                    playerId: p.playerId,
-                    socketId: p.socketId,
-                    name: p.name,
-                    isHost: p.isHost,
-                    active: true,
-                    isReady: p.isHost
+                    playerId: p.playerId, socketId: p.socketId, name: p.name,
+                    isHost: p.isHost, active: true, isReady: p.isHost
                 }));
                 gameState = null;
                 io.emit('lobbyUpdate', players);
@@ -192,18 +194,18 @@ function handlePlayerRemoval(playerId) {
     const player = gameState.players.find(p => p.playerId === playerId);
     if (!player || player.status !== 'Disconnected') return;
     player.status = 'Removed';
-    io.emit('gameLog', `Player ${player.name} failed to reconnect and has been removed.`);
+    addLog(`Player ${player.name} failed to reconnect and has been removed.`);
     delete reconnectTimers[playerId];
     if (player.isHost) {
         const nextHost = gameState.players.find(p => p.status === 'Active');
         if (nextHost) {
             nextHost.isHost = true;
-            io.emit('gameLog', `Host privileges transferred to ${nextHost.name}.`);
+            addLog(`Host privileges transferred to ${nextHost.name}.`);
         }
     }
     const activePlayers = gameState.players.filter(p => p.status === 'Active');
     if (activePlayers.length < 2) {
-        io.emit('gameLog', 'Not enough players to continue. Returning to lobby.');
+        addLog('Not enough players to continue. Returning to lobby.');
         const finalPlayers = gameState.players.filter(p => p.status !== 'Removed');
         players = finalPlayers.map(p => ({
             playerId: p.playerId, socketId: p.socketId, name: p.name,
@@ -258,7 +260,7 @@ io.on('connection', (socket) => {
                     io.to(playerToRejoin.socketId).emit('promptForBid', { maxBid: gameState.numCardsToDeal });
                 }
                 socket.emit('joinSuccess', { playerId: playerToRejoin.playerId, lobby: players });
-                io.emit('gameLog', `Player ${playerToRejoin.name} has reconnected.`);
+                addLog(`Player ${playerToRejoin.name} has reconnected.`);
                 io.emit('updateGameState', gameState);
                 return;
             }
@@ -347,22 +349,23 @@ io.on('connection', (socket) => {
         }
     });
 
-    // ADDED: New listener for the host to mark a player as AFK
     socket.on('markPlayerAFK', ({ playerIdToMark }) => {
         if (!gameState || gameState.isPaused) return;
         const host = gameState.players.find(p => p.socketId === socket.id && p.isHost);
-        if (!host) return; // Action only allowed by the host
+        if (!host) return;
     
         const playerToMark = gameState.players.find(p => p.playerId === playerIdToMark);
-        if (!playerToMark || playerToMark.status !== 'Active') return; // Can only mark active players
+        if (!playerToMark || playerToMark.status !== 'Active') return;
     
-        // Use the existing disconnection logic
         playerToMark.status = 'Disconnected';
-        io.emit('gameLog', `Host ${host.name} marked ${playerToMark.name} as AFK. The game is paused.`);
+        addLog(`Host ${host.name} marked ${playerToMark.name} as AFK. The game is paused.`);
         
         gameState.isPaused = true;
         gameState.pausedForPlayerNames = gameState.players.filter(p => p.status === 'Disconnected').map(p => p.name);
         gameState.pauseEndTime = Date.now() + DISCONNECT_GRACE_PERIOD;
+
+        // ADDED: Notify the specific player they were marked AFK
+        io.to(playerToMark.socketId).emit('youWereMarkedAFK');
     
         if (reconnectTimers[playerToMark.playerId]) clearTimeout(reconnectTimers[playerToMark.playerId]);
         reconnectTimers[playerToMark.playerId] = setTimeout(() => {
@@ -370,6 +373,29 @@ io.on('connection', (socket) => {
         }, DISCONNECT_GRACE_PERIOD);
     
         io.emit('updateGameState', gameState);
+    });
+
+    // ADDED: New listener for when an AFK player signals they are back
+    socket.on('playerIsBack', () => {
+        if (!gameState || !gameState.isPaused) return;
+        const player = gameState.players.find(p => p.socketId === socket.id);
+
+        if (player && player.status === 'Disconnected') {
+            player.status = 'Active';
+            clearTimeout(reconnectTimers[player.playerId]);
+            delete reconnectTimers[player.playerId];
+
+            const stillDisconnected = gameState.players.filter(p => p.status === 'Disconnected');
+            if (stillDisconnected.length === 0) {
+                gameState.isPaused = false;
+                gameState.pauseEndTime = null;
+                gameState.pausedForPlayerNames = [];
+            } else {
+                gameState.pausedForPlayerNames = stillDisconnected.map(p => p.name);
+            }
+            addLog(`Player ${player.name} is back.`);
+            io.emit('updateGameState', gameState);
+        }
     });
 
     socket.on('submitBid', ({ bid }) => {
@@ -386,13 +412,13 @@ io.on('connection', (socket) => {
             }
         }
         player.bid = proposedBid;
-        io.emit('gameLog', `📣 ${player.name} bids ${player.bid}.`);
+        addLog(`📣 ${player.name} bids ${player.bid}.`);
         const nextBidderIndex = findNextActivePlayer(gameState.biddingPlayerIndex, gameState.players);
         if (nextBidderIndex === findNextActivePlayer(gameState.dealerIndex, gameState.players)) {
             gameState.phase = 'Playing';
             gameState.biddingPlayerIndex = null;
             gameState.currentPlayerIndex = findNextActivePlayer(gameState.dealerIndex, gameState.players);
-            io.emit('gameLog', `Bidding complete. ${gameState.players[gameState.currentPlayerIndex]?.name} starts.`);
+            addLog(`Bidding complete. ${gameState.players[gameState.currentPlayerIndex]?.name} starts.`);
         } else {
             gameState.biddingPlayerIndex = nextBidderIndex;
             const nextBidder = gameState.players[nextBidderIndex];
@@ -415,7 +441,7 @@ io.on('connection', (socket) => {
         player.hand.splice(cardInHandIndex, 1);
         gameState.currentTrick.push({ playerId: player.playerId, name: player.name, card });
         updateCurrentWinner(gameState);
-        io.emit('gameLog', `› ${player.name} played the ${card.rank} of ${card.suit}.`);
+        addLog(`› ${player.name} played the ${card.rank} of ${card.suit}.`);
         io.emit('updateGameState', gameState);
         const activePlayersCount = gameState.players.filter(p => p.status === 'Active').length;
         if (gameState.currentTrick.length < activePlayersCount) {
@@ -433,7 +459,7 @@ io.on('connection', (socket) => {
             const playerInGame = gameState.players.find(p => p.socketId === socket.id && p.status === 'Active');
             if (playerInGame) {
                 playerInGame.status = 'Disconnected';
-                io.emit('gameLog', `Player ${playerInGame.name} has disconnected. The game is paused.`);
+                addLog(`Player ${playerInGame.name} has disconnected. The game is paused.`);
                 gameState.isPaused = true;
                 gameState.pausedForPlayerNames = gameState.players.filter(p => p.status === 'Disconnected').map(p => p.name);
                 gameState.pauseEndTime = Date.now() + DISCONNECT_GRACE_PERIOD;

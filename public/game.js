@@ -407,29 +407,19 @@ window.addEventListener('DOMContentLoaded', () => {
         document.getElementById('my-tricks-value').textContent = localPlayer.tricksWon;
         document.getElementById('my-score-value').textContent = localPlayer.score;
         
-        // REVISED: Populate the new two-tiered Round Vitals dashboard
-        const vitalsPanel = document.getElementById('round-vitals');
+        // REVISED: Populate the new separate vital tiles
+        const trumpTile = document.getElementById('trump-vitals-tile');
+        const cardsTile = document.getElementById('cards-vitals-tile');
+        const bidsTile = document.getElementById('bids-vitals-tile');
+        
         const totalBids = gs.players.reduce((sum, p) => p.bid !== null ? sum + p.bid : sum, 0);
         const trumpContent = gs.trumpSuit === 'No Trump' 
             ? `<div class="no-trump-value">NO TRUMP</div>` 
             : `<img src="/cards/suit_${gs.trumpSuit.toLowerCase()}.svg" class="trump-icon" />`;
 
-        vitalsPanel.innerHTML = `
-            <div class="vital-stats-row">
-                <div class="vital-stat">
-                    <div class="label">Cards Dealt</div>
-                    <div class="value">${gs.numCardsToDeal}</div>
-                </div>
-                <div class="vital-stat">
-                    <div class="label">Current Total Bids</div>
-                    <div class="value">${totalBids}/${gs.numCardsToDeal}</div>
-                </div>
-            </div>
-            <div class="vital-trump-area">
-                <div class="label">Trump</div>
-                ${trumpContent}
-            </div>
-        `;
+        trumpTile.innerHTML = `<div class="label">Trump</div>${trumpContent}`;
+        cardsTile.innerHTML = `<div class="label">Cards Dealt</div><div class="value">${gs.numCardsToDeal}</div>`;
+        bidsTile.innerHTML = `<div class="label">Current Total Bids</div><div class="value">${totalBids}/${gs.numCardsToDeal}</div>`;
 
         const handArea = document.getElementById('local-player-hand-area');
         handArea.innerHTML = '';
@@ -577,7 +567,7 @@ window.addEventListener('DOMContentLoaded', () => {
         modal.classList.remove('hidden');
     }
 
-    // REVISED: Updated logic for the graphical bid/trick display
+    // REVISED: Updated "Bust" logic
     function createBidProgressHTML(player) {
         if (player.bid === null) {
             return `<span class="bidding-text">Bidding...</span>`;
@@ -592,21 +582,18 @@ window.addEventListener('DOMContentLoaded', () => {
         const iconBusted = `<svg class="trick-icon trick-busted" viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="#c70039" stroke="#f5f5dc" stroke-width="4"/><path d="M30 30 L70 70 M70 30 L30 70" stroke="#f5f5dc" stroke-width="8" fill="none" stroke-linecap="round"/></svg>`;
         const iconTarget = `<svg class="trick-icon bid-target" viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="none" stroke="#f5f5dc" stroke-width="4" stroke-dasharray="10 5"/></svg>`;
         
-        if (bid === 0 && tricksWon > 0) { // Special bust case for zero bid
-             for (let i = 0; i < tricksWon; i++) iconsHTML += iconBusted;
-        } else if (isBusted) {
-             for (let i = 0; i < bid; i++) iconsHTML += iconWon; // Show correct tricks
-             for (let i = 0; i < tricksWon - bid; i++) iconsHTML += iconBusted; // Show busted tricks
-        } else { // Not busted
+        if (isBusted) {
+             for (let i = 0; i < bid; i++) iconsHTML += iconWon; 
+             for (let i = 0; i < tricksWon - bid; i++) iconsHTML += iconBusted;
+        } else {
              for (let i = 0; i < tricksWon; i++) iconsHTML += iconWon;
              for (let i = tricksWon; i < bid; i++) iconsHTML += iconTarget;
         }
         
-        // Handle successful 0 bid display (if round is not over, it's just an empty target state)
         if (bid === 0 && tricksWon === 0 && window.gameState.phase === 'Playing') {
-             return iconTarget; // Show one target icon for a zero bid
+             return iconTarget; 
         } else if (bid === 0 && tricksWon === 0) {
-             return iconWon; // If bidding/review/end of round, it's successful so far
+             return iconWon;
         }
 
         return iconsHTML;
@@ -619,8 +606,12 @@ window.addEventListener('DOMContentLoaded', () => {
         const isActivePlayer = (gs.phase === 'Bidding' && gs.players[gs.biddingPlayerIndex]?.playerId === player.playerId) || (gs.phase === 'Playing' && gs.players[gs.currentPlayerIndex]?.playerId === player.playerId);
         if (isActivePlayer && !gs.isPaused) { slot.classList.add('active-player'); }
         
+        // MODIFIED: Restructured for horizontal layout
         const info = document.createElement('div');
         info.className = 'player-slot-info';
+
+        const topRow = document.createElement('div');
+        topRow.className = 'player-slot-top-row';
         
         let nameClass = "name";
         let statusText = '';
@@ -630,7 +621,12 @@ window.addEventListener('DOMContentLoaded', () => {
         const nameDiv = document.createElement('div');
         nameDiv.className = nameClass;
         nameDiv.textContent = `${player.name} ${statusText}`;
-        info.appendChild(nameDiv);
+        topRow.appendChild(nameDiv);
+
+        const bidProgressDiv = document.createElement('div');
+        bidProgressDiv.className = 'bid-progress-container';
+        bidProgressDiv.innerHTML = createBidProgressHTML(player);
+        topRow.appendChild(bidProgressDiv);
 
         const myPlayer = gs.players.find(p => p.playerId === myPersistentPlayerId);
         if (myPlayer && myPlayer.isHost && player.playerId !== myPersistentPlayerId && player.status === 'Active') {
@@ -647,12 +643,9 @@ window.addEventListener('DOMContentLoaded', () => {
         const scoreDiv = document.createElement('div');
         scoreDiv.className = 'score';
         scoreDiv.textContent = `Score: ${player.score}`;
-        info.appendChild(scoreDiv);
 
-        const bidProgressDiv = document.createElement('div');
-        bidProgressDiv.className = 'bid-progress-container';
-        bidProgressDiv.innerHTML = createBidProgressHTML(player);
-        info.appendChild(bidProgressDiv);
+        info.appendChild(topRow);
+        info.appendChild(scoreDiv);
     
         const cardPlaceholder = document.createElement('div');
         cardPlaceholder.className = 'card-placeholder';

@@ -224,7 +224,6 @@ window.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        // ADDED: Listener for the "I'm Back" button in the AFK modal
         const afkModal = document.getElementById('afk-notification-modal');
         document.getElementById('im-back-btn').addEventListener('click', () => {
             socket.emit('playerIsBack');
@@ -235,9 +234,15 @@ window.addEventListener('DOMContentLoaded', () => {
 
     socket.on('promptForBid', ({ maxBid }) => { const actionBanner = document.getElementById('action-banner'); const bidInput = document.getElementById('bid-input'); document.getElementById('action-banner-text').textContent = 'Your turn to BID!'; document.getElementById('action-banner-input-area').style.display = 'flex'; actionBanner.style.display = 'block'; bidInput.innerHTML = ''; for (let i = 0; i <= maxBid; i++) { const option = document.createElement('option'); option.value = i; option.textContent = i; bidInput.appendChild(option); } });
     socket.on('invalidBid', ({ message }) => showToast(message));
-    socket.on('trickWon', ({ winnerName }) => { const overlay = document.getElementById('trick-winner-overlay'); overlay.textContent = `${winnerName} wins the trick!`; overlay.classList.add('show'); addMessageToGameLog(`🏆 ${winnerName} wins the trick!`); setTimeout(() => overlay.classList.remove('show'), 2900); });
+    
+    // MODIFIED: The faulty log call has been removed.
+    socket.on('trickWon', ({ winnerName }) => { 
+        const overlay = document.getElementById('trick-winner-overlay'); 
+        overlay.textContent = `${winnerName} wins the trick!`; 
+        overlay.classList.add('show'); 
+        setTimeout(() => overlay.classList.remove('show'), 2900); 
+    });
 
-    // ADDED: New listener to show the AFK modal
     socket.on('youWereMarkedAFK', () => {
         const afkModal = document.getElementById('afk-notification-modal');
         afkModal.style.display = 'flex';
@@ -333,8 +338,6 @@ window.addEventListener('DOMContentLoaded', () => {
     });
 
     socket.on('announce', (message) => showToast(message));
-    // REMOVED: Old gameLog listener, as logs are now part of gameState
-    // socket.on('gameLog', (message) => addMessageToGameLog(message)); 
 
     function renderLobby(players) {
         const me = players.find(p => p.playerId === myPersistentPlayerId);
@@ -459,7 +462,6 @@ window.addEventListener('DOMContentLoaded', () => {
             viewLastTrickBtn.style.display = 'none';
         }
 
-        // ADDED: Render game log from gameState
         renderGameLog(gs);
     }
 
@@ -614,21 +616,19 @@ window.addEventListener('DOMContentLoaded', () => {
     function getSuitSymbol(suit, isImage = false) { const symbols = { 'Spades': '♠️', 'Hearts': '♥️', 'Diamonds': '♦️', 'Clubs': '♣️', 'No Trump': 'NT' }; if (isImage) { if (suit === 'No Trump') return `<div class="no-trump">NO TRUMP</div>`; const suitName = suit?.toLowerCase(); if (!suitName) return '---'; return `<img src="/cards/suit_${suitName}.svg" alt="${suit}">`; } return symbols[suit] || suit; }
     const toastNotification = document.getElementById('toast-notification'); function showToast(message) { toastNotification.textContent = message; toastNotification.classList.add('show'); setTimeout(() => toastNotification.classList.remove('show'), 3000); }
     
-    // REVISED: Game log rendering from gameState
     function renderGameLog(gs) {
         const gameLogList = document.getElementById('game-log-list');
         gameLogList.innerHTML = '';
         if (gs.logHistory) {
-            const logsToDisplay = gs.logHistory.slice(-12); // Get the last 12 logs
+            const logsToDisplay = gs.logHistory.slice(-12); 
             logsToDisplay.forEach(message => {
                 const li = document.createElement('li');
                 li.innerHTML = message;
-                gameLogList.prepend(li); // Prepend to keep newest on top
+                gameLogList.prepend(li);
             });
         }
     }
     
-    // --- Draggable Modal Functionality ---
     function makeDraggable(modal) {
         const modalContent = modal.querySelector('.modal-content');
         const header = modal.querySelector('.modal-header'); 
@@ -701,7 +701,6 @@ window.addEventListener('DOMContentLoaded', () => {
         header.addEventListener('touchstart', dragTouchStart);
     }
     
-    // Make all modals draggable
     makeDraggable(document.getElementById('scoreboard-modal'));
     makeDraggable(document.getElementById('confirm-end-game-modal'));
     makeDraggable(document.getElementById('last-trick-modal'));

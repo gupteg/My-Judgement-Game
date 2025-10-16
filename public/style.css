@@ -31,7 +31,7 @@ button:disabled { background-color: #555; border-color: #777; cursor: not-allowe
 
 .hand-controls { display: flex; justify-content: center; margin-bottom: 10px; }
 #rearrange-hand-btn { font-size: 1em; padding: 8px 16px; border-width: 1px; }
-#local-player-hand-area { flex-grow: 1; /* REMOVED: overflow-y: auto; */ }
+#local-player-hand-area { flex-grow: 1; }
 .card-container { display: flex; flex-wrap: wrap; justify-content: flex-start; gap: 10px; max-width: 830px; margin: 0 auto; }
 
 .card { width: 110px; height: 154px; transition: all 0.2s ease; background-size: contain; background-repeat: no-repeat; background-position: center; border-radius: 8px; flex-shrink: 0; }
@@ -60,8 +60,8 @@ button:disabled { background-color: #555; border-color: #777; cursor: not-allowe
 .player-slot.active-player { border-color: var(--gold-accent); box-shadow: 0 0 15px var(--gold-accent); animation: flashing-border 2s infinite; }
 @keyframes flashing-border { 50% { border-color: var(--light-text); box-shadow: 0 0 15px var(--light-text); } }
 .player-slot-info { text-align: left; flex-grow: 1; display: flex; flex-direction: column; gap: 5px; overflow: hidden; }
-.player-slot-top-row { display: flex; align-items: flex-start; gap: 10px; }
-.player-slot-info .name { font-size: 1.8em; font-weight: bold; flex-grow: 1; /* Allow name to take up space */ word-break: break-word; /* Wrap long names */ }
+.player-slot-top-row { display: flex; align-items: flex-start; gap: 10px; justify-content: flex-start; }
+.player-slot-info .name { font-size: 1.8em; font-weight: bold; flex-grow: 1; word-break: break-word; }
 .player-slot-info .name.disconnected { opacity: 0.6; font-style: italic; }
 .player-slot-info .name.removed { opacity: 0.4; text-decoration: line-through; }
 .player-slot-info .score { font-size: 1.1em; font-weight: bold; }
@@ -72,7 +72,7 @@ button:disabled { background-color: #555; border-color: #777; cursor: not-allowe
 .trick-icon.trick-won { animation: coin-pop 0.3s ease-out; }
 @keyframes coin-pop { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 
-.mark-afk-btn { font-size: 0.8em; padding: 2px 8px; margin-top: 5px; background-color: #b8860b; border-color: #daa520; font-weight: normal; }
+.mark-afk-btn { font-size: 0.8em; padding: 2px 8px; margin-top: 5px; background-color: #b8860b; border-color: #daa520; font-weight: normal; align-self: flex-start; margin-left: 2px; }
 .mark-afk-btn:hover { background-color: #ffc400; border-color: #f5f5dc; }
 
 .card-placeholder { width: 80px; height: 112px; border: 2px dashed rgba(255,255,255,0.3); border-radius: 6px; position: relative; flex-shrink: 0; }
@@ -168,8 +168,8 @@ button:disabled { background-color: #555; border-color: #777; cursor: not-allowe
     #game-status-banner { position: fixed; top: 0; left: 0; right: 0; z-index: 100; margin: 0; border-radius: 0; font-size: 1.2em; padding: 8px; }
     #mobile-scroll-container { display: flex; flex-grow: 1; overflow-x: auto; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; padding-top: 50px; }
     #left-column, #center-column, #right-column { flex: 0 0 100%; width: 100%; max-height: 100%; box-sizing: border-box; padding: 15px; scroll-snap-align: center; overflow-y: auto; }
-    #left-column { padding-bottom: 120px; /* Fix for scrolling */ }
-    #center-column { border: none; background: transparent; }
+    #left-column { padding-bottom: 120px; }
+    #center-column { border: none; background: var(--felt-green); } /* RESTORED background */
     .modal { position: fixed; }
     .card-container { justify-content: center; }
     .player-slot-info .name { font-size: 1.5em; }

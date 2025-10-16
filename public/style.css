@@ -59,9 +59,9 @@ button:disabled { background-color: #555; border-color: #777; cursor: not-allowe
 .player-slot { background-color: rgba(0,0,0,0.2); border: 3px solid var(--teak-light); border-radius: 8px; padding: 15px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; transition: all 0.3s ease; }
 .player-slot.active-player { border-color: var(--gold-accent); box-shadow: 0 0 15px var(--gold-accent); animation: flashing-border 2s infinite; }
 @keyframes flashing-border { 50% { border-color: var(--light-text); box-shadow: 0 0 15px var(--light-text); } }
-.player-slot-info { text-align: left; flex-grow: 1; display: flex; flex-direction: column; gap: 5px; overflow: hidden; }
+.player-slot-info { text-align: left; flex-grow: 1; display: flex; flex-direction: column; gap: 5px; min-width: 0; }
 .player-slot-top-row { display: flex; align-items: flex-start; gap: 10px; justify-content: flex-start; }
-.player-slot-info .name { font-size: 1.8em; font-weight: bold; flex-grow: 1; word-break: break-word; }
+.player-slot-info .name { font-size: 1.8em; font-weight: bold; word-break: break-word; }
 .player-slot-info .name.disconnected { opacity: 0.6; font-style: italic; }
 .player-slot-info .name.removed { opacity: 0.4; text-decoration: line-through; }
 .player-slot-info .score { font-size: 1.1em; font-weight: bold; }
@@ -169,7 +169,7 @@ button:disabled { background-color: #555; border-color: #777; cursor: not-allowe
     #mobile-scroll-container { display: flex; flex-grow: 1; overflow-x: auto; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; padding-top: 50px; }
     #left-column, #center-column, #right-column { flex: 0 0 100%; width: 100%; max-height: 100%; box-sizing: border-box; padding: 15px; scroll-snap-align: center; overflow-y: auto; }
     #left-column { padding-bottom: 120px; }
-    #center-column { border: none; background: var(--felt-green); } /* RESTORED background */
+    #center-column { border: none; background: var(--felt-green); } 
     .modal { position: fixed; }
     .card-container { justify-content: center; }
     .player-slot-info .name { font-size: 1.5em; }

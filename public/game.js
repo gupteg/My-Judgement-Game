@@ -160,6 +160,7 @@ window.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // MODIFIED: Added event listener for hard reset button
     function setupLobbyListeners() {
         document.getElementById('start-game-btn').addEventListener('click', () => {
             const password = document.getElementById('host-password-input').value;
@@ -167,6 +168,11 @@ window.addEventListener('DOMContentLoaded', () => {
         });
         document.getElementById('ready-btn').addEventListener('click', () => socket.emit('setPlayerReady'));
         document.getElementById('end-session-btn').addEventListener('click', () => socket.emit('endSession'));
+        document.getElementById('hard-reset-btn').addEventListener('click', () => {
+            const resetModal = document.getElementById('confirm-hard-reset-modal');
+            resetModal.style.display = 'flex';
+            resetModal.classList.remove('hidden');
+        });
     }
 
     function setupDynamicEventListeners() {
@@ -197,6 +203,7 @@ window.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // MODIFIED: Added event listeners for hard reset confirmation modal
     function setupModalAndButtonListeners() {
         document.getElementById('submit-bid-btn').addEventListener('click', () => { 
             const bidInput = document.getElementById('bid-input'); 
@@ -239,6 +246,17 @@ window.addEventListener('DOMContentLoaded', () => {
             socket.emit('playerIsBack');
             afkModal.style.display = 'none';
             afkModal.classList.add('hidden');
+        });
+
+        const resetModal = document.getElementById('confirm-hard-reset-modal');
+        document.getElementById('confirm-reset-no-btn').addEventListener('click', () => {
+            resetModal.style.display = 'none';
+            resetModal.classList.add('hidden');
+        });
+        document.getElementById('confirm-reset-yes-btn').addEventListener('click', () => {
+            resetModal.style.display = 'none';
+            resetModal.classList.add('hidden');
+            socket.emit('hardReset');
         });
     }
 
@@ -348,6 +366,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
     socket.on('announce', (message) => showToast(message));
 
+    // MODIFIED: Updated to toggle the new host-controls div
     function renderLobby(players) {
         const me = players.find(p => p.playerId === myPersistentPlayerId);
         if (!me) { 
@@ -389,9 +408,7 @@ window.addEventListener('DOMContentLoaded', () => {
         });
 
         readyBtn.style.display = me.isHost ? 'none' : 'block';
-        document.getElementById('start-game-btn').style.display = me.isHost ? 'block' : 'none';
-        document.getElementById('host-password-area').style.display = me.isHost ? 'block' : 'none';
-        document.getElementById('end-session-btn').style.display = me.isHost ? 'block' : 'none';
+        document.getElementById('host-controls').style.display = me.isHost ? 'flex' : 'none';
         document.getElementById('host-message').style.display = me.isHost ? 'none' : 'block';
     }
 
@@ -413,7 +430,6 @@ window.addEventListener('DOMContentLoaded', () => {
         document.getElementById('my-tricks-value').textContent = localPlayer.tricksWon;
         document.getElementById('my-score-value').textContent = localPlayer.score;
         
-        // REVISED: Populate the new separate vital tiles
         const trumpTile = document.getElementById('trump-vitals-tile');
         const cardsTile = document.getElementById('cards-vitals-tile');
         const bidsTile = document.getElementById('bids-vitals-tile');
@@ -573,7 +589,6 @@ window.addEventListener('DOMContentLoaded', () => {
         modal.classList.remove('hidden');
     }
 
-    // MODIFIED: Complete rewrite of the function for Zero Bid logic.
     function createBidProgressHTML(player) {
         if (player.bid === null) {
             return `<span class="bidding-text">Bidding...</span>`;
@@ -620,7 +635,6 @@ window.addEventListener('DOMContentLoaded', () => {
         const isActivePlayer = (gs.phase === 'Bidding' && gs.players[gs.biddingPlayerIndex]?.playerId === player.playerId) || (gs.phase === 'Playing' && gs.players[gs.currentPlayerIndex]?.playerId === player.playerId);
         if (isActivePlayer && !gs.isPaused) { slot.classList.add('active-player'); }
         
-        // MODIFIED: Restructured for horizontal layout
         const info = document.createElement('div');
         info.className = 'player-slot-info';
 
@@ -776,4 +790,5 @@ window.addEventListener('DOMContentLoaded', () => {
     makeDraggable(document.getElementById('confirm-end-game-modal'));
     makeDraggable(document.getElementById('last-trick-modal'));
     makeDraggable(document.getElementById('afk-notification-modal'));
+    makeDraggable(document.getElementById('confirm-hard-reset-modal'));
 });

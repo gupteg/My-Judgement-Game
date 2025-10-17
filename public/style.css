@@ -15,9 +15,16 @@ body { font-family: 'Georgia', 'Times New Roman', Times, serif; background-color
 button { padding: 12px 24px; font-size: 1.2em; cursor: pointer; border-radius: 8px; border: 2px solid var(--gold-accent); background-color: var(--teak-light); color: var(--light-text); font-weight: bold; transition: all 0.2s ease; }
 button:hover:not(:disabled) { background-color: var(--gold-accent); color: var(--teak-dark); }
 button:disabled { background-color: #555; border-color: #777; cursor: not-allowed; }
-.lobby-actions { display: flex; justify-content: center; gap: 15px; margin-top: 20px; }
+.lobby-actions { display: flex; justify-content: center; gap: 15px; margin-top: 20px; align-items: center; }
 #end-session-btn { background-color: #8B0000; border-color: #FF4500; }
 #end-session-btn:hover { background-color: #DC143C; }
+
+/* MODIFIED: Styles for the new host control group and danger button */
+#host-controls { display: flex; flex-direction: column; gap: 10px; align-items: stretch; }
+#host-controls input { padding: 12px; font-size: 1em; border: 2px solid var(--teak-light); border-radius: 5px; background-color: var(--teak-dark); color: white; }
+.danger-btn { background-color: #800000; border-color: #c70039; }
+.danger-btn:hover { background-color: #c70039; border-color: #FF4500; }
+
 
 #player-list { list-style-type: none; padding: 0; margin: 20px 0; text-align: left; }
 #player-list li { background-color: var(--teak-dark); padding: 10px 15px; border-radius: 5px; margin-bottom: 8px; font-size: 1.1em; color: var(--light-text); display: flex; justify-content: space-between; align-items: center; }

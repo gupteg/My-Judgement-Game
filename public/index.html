@@ -21,11 +21,12 @@
         <ul id="player-list"></ul>
         <div class="lobby-actions">
             <button id="ready-btn">Ready</button>
-            <div id="host-password-area" style="display: none;">
-            <input type="password" id="host-password-input" placeholder="Host Password">
-   </div>            
-            <button id="start-game-btn">Start Game</button>
-            <button id="end-session-btn">End Session</button>
+            <div id="host-controls" style="display: none;">
+                <input type="password" id="host-password-input" placeholder="Host Password">
+                <button id="start-game-btn">Start Game</button>
+                <button id="end-session-btn">End Session</button>
+                <button id="hard-reset-btn" class="danger-btn">Hard Reset</button>
+            </div>
         </div>
         <p id="host-message" style="display: none;">(Waiting for the host to start the game)</p>
     </div>
@@ -89,6 +90,19 @@
                         <div class="modal-actions">
                             <button id="confirm-end-yes-btn">Yes, End Game</button>
                             <button id="confirm-end-no-btn">No, Continue</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="confirm-hard-reset-modal" class="modal" style="display: none;">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h2>Hard Reset Session</h2>
+                        </div>
+                        <p>Are you sure? This will end any active game and remove all other players from the lobby.</p>
+                        <div class="modal-actions">
+                            <button id="confirm-reset-yes-btn" class="danger-btn">Yes, Hard Reset</button>
+                            <button id="confirm-reset-no-btn">No, Cancel</button>
                         </div>
                     </div>
                 </div>

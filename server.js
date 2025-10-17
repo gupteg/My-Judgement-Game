@@ -350,6 +350,43 @@ io.on('connection', (socket) => {
             io.emit('lobbyUpdate', players);
         }
     });
+    
+    // MODIFIED: Added hard reset handler
+    socket.on('hardReset', () => {
+        const host = players.find(p => p.socketId === socket.id && p.isHost);
+        if (host) {
+            // Disconnect all other players
+            players.forEach(p => {
+                if (p.socketId !== host.socketId) {
+                    io.to(p.socketId).emit('forceDisconnect');
+                }
+            });
+
+            // Clear all game state
+            gameState = null;
+            Object.keys(reconnectTimers).forEach(key => {
+                clearTimeout(reconnectTimers[key]);
+                delete reconnectTimers[key];
+            });
+            if (gameOverCleanupTimer) {
+                clearTimeout(gameOverCleanupTimer);
+                gameOverCleanupTimer = null;
+            }
+
+            // Reset lobby to just the host
+            players = [{
+                playerId: host.playerId,
+                socketId: host.socketId,
+                name: host.name,
+                isHost: true,
+                active: true,
+                isReady: true // Host is always ready in their own lobby
+            }];
+
+            // Update the host's UI, which effectively updates everyone as they've been kicked
+            io.emit('lobbyUpdate', players);
+        }
+    });
 
     socket.on('markPlayerAFK', ({ playerIdToMark }) => {
         if (!gameState || gameState.isPaused) return;

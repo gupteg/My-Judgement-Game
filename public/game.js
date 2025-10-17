@@ -20,28 +20,23 @@ window.addEventListener('DOMContentLoaded', () => {
 
     const rankMap = { 'A': 'ace', 'K': 'king', 'Q': 'queen', 'J': 'jack', '10': '10', '9': '9', '8': '8', '7': '7', '6': '6', '5': '5', '4': '4', '3': '3', '2': '2' };
 
-    // All event listeners are now properly scoped and delegated for robustness.
     setupJoinScreenListeners();
-    setupLobbyEventListeners();
+    setupLobbyEventListeners(); 
     setupModalAndButtonListeners();
     setupDynamicEventListeners();
     document.getElementById('rearrange-hand-btn').addEventListener('click', handleRearrangeHand);
 
-
-    // MODIFIED: This function now uses a robust event delegation pattern.
     function setupLobbyEventListeners() {
         const playerActions = document.getElementById('player-lobby-actions');
         const hostActions = document.getElementById('host-lobby-actions');
         const playerList = document.getElementById('player-list');
 
-        // Listener for regular player actions
         playerActions.addEventListener('click', (e) => {
             if (e.target.id === 'ready-btn') {
                 socket.emit('setPlayerReady');
             }
         });
 
-        // Listener for host actions
         hostActions.addEventListener('click', (e) => {
             const targetId = e.target.id;
             if (targetId === 'start-game-btn') {
@@ -56,7 +51,6 @@ window.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        // Listener for dynamically created kick buttons
         playerList.addEventListener('click', (e) => {
             if (e.target.classList.contains('kick-btn')) {
                 const playerIdToKick = e.target.dataset.playerId;
@@ -65,7 +59,6 @@ window.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // MODIFIED: This function is now only for non-button, dynamic events.
     function setupDynamicEventListeners() {
         const scrollContainer = document.getElementById('mobile-scroll-container');
         const pageIndicator = document.getElementById('page-indicator');
@@ -85,9 +78,6 @@ window.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
-
-    // The rest of the file remains unchanged from the version with the visual fixes.
-    // The functions below are included for completeness.
 
     socket.on('updateGameState', (gs) => {
         const wasHidden = document.getElementById('scoreboard-modal').classList.contains('hidden') 
@@ -649,6 +639,7 @@ window.addEventListener('DOMContentLoaded', () => {
         return iconsHTML;
     }
 
+    // MODIFIED: This function is completely rewritten to generate the new "Player Plaque 2.0" layout.
     function createPlayerSlot(player, gs) {
         const slot = document.createElement('div');
         slot.className = 'player-slot';
@@ -658,43 +649,51 @@ window.addEventListener('DOMContentLoaded', () => {
         const info = document.createElement('div');
         info.className = 'player-slot-info';
 
+        // Top Row: Name and Score/AFK
         const topRow = document.createElement('div');
-        topRow.className = 'player-slot-top-row';
-        
-        let nameClass = "name";
+        topRow.className = 'player-plaque-top';
+
+        let nameClass = "player-name";
         let statusText = '';
-        if (player.status === 'Disconnected') { nameClass += " disconnected"; statusText = '(Disconnected)'; }
-        else if (player.status === 'Removed') { nameClass += " removed"; statusText = '(Removed)'; }
+        if (player.status === 'Disconnected') { nameClass += " disconnected"; statusText = ' (Disconnected)'; }
+        else if (player.status === 'Removed') { nameClass += " removed"; statusText = ' (Removed)'; }
         
         const nameDiv = document.createElement('div');
         nameDiv.className = nameClass;
-        nameDiv.textContent = `${player.name} ${statusText}`;
-        topRow.appendChild(nameDiv);
-
-        const bidProgressDiv = document.createElement('div');
-        bidProgressDiv.className = 'bid-progress-container';
-        bidProgressDiv.innerHTML = createBidProgressHTML(player);
-        topRow.appendChild(bidProgressDiv);
+        nameDiv.textContent = player.name + statusText;
+        
+        const actionsGroup = document.createElement('div');
+        actionsGroup.className = 'player-actions-group';
 
         const myPlayer = gs.players.find(p => p.playerId === myPersistentPlayerId);
         if (myPlayer && myPlayer.isHost && player.playerId !== myPersistentPlayerId && player.status === 'Active') {
             const afkButton = document.createElement('button');
             afkButton.className = 'mark-afk-btn';
-            afkButton.textContent = 'Mark AFK';
+            afkButton.textContent = 'AFK';
             afkButton.addEventListener('click', (e) => {
                 e.stopPropagation();
                 socket.emit('markPlayerAFK', { playerIdToMark: player.playerId });
             });
-            nameDiv.appendChild(afkButton);
+            actionsGroup.appendChild(afkButton);
         }
 
         const scoreDiv = document.createElement('div');
-        scoreDiv.className = 'score';
-        scoreDiv.textContent = `Score: ${player.score}`;
+        scoreDiv.className = 'player-score-bubble';
+        scoreDiv.textContent = player.score;
+        actionsGroup.appendChild(scoreDiv);
 
+        topRow.appendChild(nameDiv);
+        topRow.appendChild(actionsGroup);
+        
+        // Bottom Row: Bid/Trick Icons
+        const bidProgressDiv = document.createElement('div');
+        bidProgressDiv.className = 'bid-progress-container';
+        bidProgressDiv.innerHTML = createBidProgressHTML(player);
+        
         info.appendChild(topRow);
-        info.appendChild(scoreDiv);
+        info.appendChild(bidProgressDiv);
     
+        // Card placeholder remains the same
         const cardPlaceholder = document.createElement('div');
         cardPlaceholder.className = 'card-placeholder';
         const playedCard = gs.currentTrick.find(p => p.playerId === player.playerId);
@@ -710,6 +709,7 @@ window.addEventListener('DOMContentLoaded', () => {
             indicator.textContent = '🏆';
             cardPlaceholder.appendChild(indicator);
         }
+
         slot.appendChild(info);
         slot.appendChild(cardPlaceholder);
         return slot;

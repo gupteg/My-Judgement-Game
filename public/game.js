@@ -20,105 +20,52 @@ window.addEventListener('DOMContentLoaded', () => {
 
     const rankMap = { 'A': 'ace', 'K': 'king', 'Q': 'queen', 'J': 'jack', '10': '10', '9': '9', '8': '8', '7': '7', '6': '6', '5': '5', '4': '4', '3': '3', '2': '2' };
 
-    // MODIFIED: All primary event listeners are now handled in one place for robustness.
-    setupMasterEventListener();
-    setupDynamicEventListeners(); // This now only handles non-button events like scrolling
+    // All event listeners are now properly scoped and delegated for robustness.
+    setupJoinScreenListeners();
+    setupLobbyEventListeners();
+    setupModalAndButtonListeners();
+    setupDynamicEventListeners();
     document.getElementById('rearrange-hand-btn').addEventListener('click', handleRearrangeHand);
 
-    // MODIFIED: Replaced individual listener setups with a single, delegated listener.
-    function setupMasterEventListener() {
-        document.body.addEventListener('click', (e) => {
-            const target = e.target;
-            const targetId = target.id;
 
-            switch (targetId) {
-                // Join Screen
-                case 'join-game-btn':
-                    const playerName = document.getElementById('player-name-input').value.trim();
-                    if (playerName) {
-                        sessionStorage.setItem('judgmentPlayerName', playerName);
-                        socket.emit('joinGame', { playerName, playerId: myPersistentPlayerId });
-                    }
-                    break;
-                
-                // Lobby Screen
-                case 'ready-btn':
-                    socket.emit('setPlayerReady');
-                    break;
-                case 'start-game-btn':
-                    const password = document.getElementById('host-password-input').value;
-                    socket.emit('startGame', { password: password });
-                    break;
-                case 'end-session-btn':
-                    socket.emit('endSession');
-                    break;
-                case 'hard-reset-btn':
-                    const resetModal = document.getElementById('confirm-hard-reset-modal');
-                    resetModal.style.display = 'flex';
-                    resetModal.classList.remove('hidden');
-                    break;
-                
-                // Modals
-                case 'submit-bid-btn':
-                    const bidInput = document.getElementById('bid-input');
-                    socket.emit('submitBid', { bid: bidInput.value });
-                    break;
-                case 'endGameBtn':
-                    const confirmModal = document.getElementById('confirm-end-game-modal');
-                    confirmModal.style.display = 'flex';
-                    confirmModal.classList.remove('hidden');
-                    break;
-                case 'confirm-end-no-btn':
-                    document.getElementById('confirm-end-game-modal').style.display = 'none';
-                    break;
-                case 'confirm-end-yes-btn':
-                    document.getElementById('confirm-end-game-modal').style.display = 'none';
-                    socket.emit('endGame');
-                    break;
-                case 'start-next-round-btn':
-                    socket.emit('startNextRound');
-                    break;
-                case 'end-game-from-modal-btn':
-                    socket.emit('endGame');
-                    break;
-                case 'player-ok-btn':
-                    document.getElementById('scoreboard-modal').style.display = 'none';
-                    break;
-                case 'close-last-trick-modal':
-                    document.getElementById('last-trick-modal').classList.add('hidden');
-                    break;
-                case 'view-last-trick-btn':
-                    renderLastTrickModal(window.gameState);
-                    break;
-                case 'im-back-btn':
-                    socket.emit('playerIsBack');
-                    document.getElementById('afk-notification-modal').style.display = 'none';
-                    break;
-                case 'confirm-reset-no-btn':
-                    document.getElementById('confirm-hard-reset-modal').style.display = 'none';
-                    break;
-                case 'confirm-reset-yes-btn':
-                    document.getElementById('confirm-hard-reset-modal').style.display = 'none';
-                    socket.emit('hardReset');
-                    break;
-            }
+    // MODIFIED: This function now uses a robust event delegation pattern.
+    function setupLobbyEventListeners() {
+        const playerActions = document.getElementById('player-lobby-actions');
+        const hostActions = document.getElementById('host-lobby-actions');
+        const playerList = document.getElementById('player-list');
 
-            // Handle dynamically created buttons like 'kick'
-            if (target.classList.contains('kick-btn')) {
-                const playerIdToKick = target.dataset.playerId;
-                socket.emit('kickPlayer', { playerIdToKick });
+        // Listener for regular player actions
+        playerActions.addEventListener('click', (e) => {
+            if (e.target.id === 'ready-btn') {
+                socket.emit('setPlayerReady');
             }
         });
 
-        // Handle modal background clicks
-        document.getElementById('last-trick-modal').addEventListener('click', (e) => {
-            if (e.target.id === 'last-trick-modal') {
-                e.target.classList.add('hidden');
+        // Listener for host actions
+        hostActions.addEventListener('click', (e) => {
+            const targetId = e.target.id;
+            if (targetId === 'start-game-btn') {
+                const password = document.getElementById('host-password-input').value;
+                socket.emit('startGame', { password: password });
+            } else if (targetId === 'end-session-btn') {
+                socket.emit('endSession');
+            } else if (targetId === 'hard-reset-btn') {
+                const resetModal = document.getElementById('confirm-hard-reset-modal');
+                resetModal.style.display = 'flex';
+                resetModal.classList.remove('hidden');
+            }
+        });
+
+        // Listener for dynamically created kick buttons
+        playerList.addEventListener('click', (e) => {
+            if (e.target.classList.contains('kick-btn')) {
+                const playerIdToKick = e.target.dataset.playerId;
+                socket.emit('kickPlayer', { playerIdToKick });
             }
         });
     }
 
-    // MODIFIED: Removed lobby-related listeners, which are now in the master listener.
+    // MODIFIED: This function is now only for non-button, dynamic events.
     function setupDynamicEventListeners() {
         const scrollContainer = document.getElementById('mobile-scroll-container');
         const pageIndicator = document.getElementById('page-indicator');
@@ -138,6 +85,9 @@ window.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
+
+    // The rest of the file remains unchanged from the version with the visual fixes.
+    // The functions below are included for completeness.
 
     socket.on('updateGameState', (gs) => {
         const wasHidden = document.getElementById('scoreboard-modal').classList.contains('hidden') 
@@ -258,6 +208,72 @@ window.addEventListener('DOMContentLoaded', () => {
             const draggingCard = document.querySelector('.dragging'); if (!draggingCard) return;
             const closestCard = getClosestCard(container, e.clientX, e.clientY);
             if (closestCard) { const box = closestCard.getBoundingClientRect(); if (e.clientX < box.left + box.width / 2) { container.insertBefore(draggingCard, closestCard); } else { const nextSibling = closestCard.nextSibling; if (nextSibling) { container.insertBefore(draggingCard, nextSibling); } else { container.appendChild(draggingCard); } } } else { container.appendChild(draggingCard); }
+        });
+    }
+
+    function setupJoinScreenListeners() {
+        document.getElementById('join-game-btn').addEventListener('click', () => {
+            const playerName = document.getElementById('player-name-input').value.trim();
+            if (playerName) {
+                sessionStorage.setItem('judgmentPlayerName', playerName);
+                socket.emit('joinGame', { playerName, playerId: myPersistentPlayerId });
+            }
+        });
+    }
+
+    function setupModalAndButtonListeners() {
+        document.getElementById('submit-bid-btn').addEventListener('click', () => { 
+            const bidInput = document.getElementById('bid-input'); 
+            socket.emit('submitBid', { bid: bidInput.value }); 
+        });
+        const confirmModal = document.getElementById('confirm-end-game-modal');
+        document.getElementById('endGameBtn').addEventListener('click', () => {
+            confirmModal.style.display = 'flex';
+            confirmModal.classList.remove('hidden');
+        });
+        document.getElementById('confirm-end-no-btn').addEventListener('click', () => {
+            confirmModal.style.display = 'none';
+            confirmModal.classList.add('hidden');
+        });
+        document.getElementById('confirm-end-yes-btn').addEventListener('click', () => { 
+            confirmModal.style.display = 'none';
+            confirmModal.classList.add('hidden');
+            socket.emit('endGame'); 
+        });
+        document.getElementById('start-next-round-btn').addEventListener('click', () => socket.emit('startNextRound'));
+        document.getElementById('end-game-from-modal-btn').addEventListener('click', () => socket.emit('endGame'));
+        
+        const scoreboardModal = document.getElementById('scoreboard-modal');
+        document.getElementById('player-ok-btn').addEventListener('click', () => {
+            scoreboardModal.style.display = 'none';
+            scoreboardModal.classList.add('hidden');
+        });
+
+        const lastTrickModal = document.getElementById('last-trick-modal');
+        document.getElementById('view-last-trick-btn').addEventListener('click', () => renderLastTrickModal(window.gameState));
+        document.getElementById('close-last-trick-modal').addEventListener('click', () => lastTrickModal.classList.add('hidden'));
+        lastTrickModal.addEventListener('click', (e) => {
+            if (e.target.id === 'last-trick-modal') {
+                lastTrickModal.classList.add('hidden');
+            }
+        });
+
+        const afkModal = document.getElementById('afk-notification-modal');
+        document.getElementById('im-back-btn').addEventListener('click', () => {
+            socket.emit('playerIsBack');
+            afkModal.style.display = 'none';
+            afkModal.classList.add('hidden');
+        });
+
+        const resetModal = document.getElementById('confirm-hard-reset-modal');
+        document.getElementById('confirm-reset-no-btn').addEventListener('click', () => {
+            resetModal.style.display = 'none';
+            resetModal.classList.add('hidden');
+        });
+        document.getElementById('confirm-reset-yes-btn').addEventListener('click', () => {
+            resetModal.style.display = 'none';
+            resetModal.classList.add('hidden');
+            socket.emit('hardReset');
         });
     }
 

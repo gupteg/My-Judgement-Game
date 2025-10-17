@@ -21,7 +21,8 @@ window.addEventListener('DOMContentLoaded', () => {
     const rankMap = { 'A': 'ace', 'K': 'king', 'Q': 'queen', 'J': 'jack', '10': '10', '9': '9', '8': '8', '7': '7', '6': '6', '5': '5', '4': '4', '3': '3', '2': '2' };
 
     setupJoinScreenListeners();
-    setupLobbyListeners();
+    // MODIFIED: Replaced old functions with a single, robust event handler
+    setupLobbyEventListeners(); 
     setupModalAndButtonListeners();
     setupDynamicEventListeners();
     document.getElementById('rearrange-hand-btn').addEventListener('click', handleRearrangeHand);
@@ -159,29 +160,34 @@ window.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    function setupLobbyListeners() {
-        document.getElementById('start-game-btn').addEventListener('click', () => {
-            const password = document.getElementById('host-password-input').value;
-            socket.emit('startGame', { password: password });
-        });
-        document.getElementById('ready-btn').addEventListener('click', () => socket.emit('setPlayerReady'));
-        document.getElementById('end-session-btn').addEventListener('click', () => socket.emit('endSession'));
-        document.getElementById('hard-reset-btn').addEventListener('click', () => {
-            const resetModal = document.getElementById('confirm-hard-reset-modal');
-            resetModal.style.display = 'flex';
-            resetModal.classList.remove('hidden');
-        });
-    }
+    // MODIFIED: Replaced with a single delegated event listener for robustness.
+    function setupLobbyEventListeners() {
+        const lobbyScreen = document.getElementById('lobby-screen');
 
-    function setupDynamicEventListeners() {
-        const playerList = document.getElementById('player-list');
-        playerList.addEventListener('click', (e) => {
-            if (e.target && e.target.classList.contains('kick-btn')) {
-                const playerIdToKick = e.target.dataset.playerId;
+        lobbyScreen.addEventListener('click', (e) => {
+            const target = e.target;
+            const targetId = target.id;
+
+            if (targetId === 'start-game-btn') {
+                const password = document.getElementById('host-password-input').value;
+                socket.emit('startGame', { password: password });
+            } else if (targetId === 'ready-btn') {
+                socket.emit('setPlayerReady');
+            } else if (targetId === 'end-session-btn') {
+                socket.emit('endSession');
+            } else if (targetId === 'hard-reset-btn') {
+                const resetModal = document.getElementById('confirm-hard-reset-modal');
+                resetModal.style.display = 'flex';
+                resetModal.classList.remove('hidden');
+            } else if (target.classList.contains('kick-btn')) {
+                const playerIdToKick = target.dataset.playerId;
                 socket.emit('kickPlayer', { playerIdToKick });
             }
         });
+    }
 
+    // MODIFIED: Removed the player-list listener as it's now handled by the main lobby listener.
+    function setupDynamicEventListeners() {
         const scrollContainer = document.getElementById('mobile-scroll-container');
         const pageIndicator = document.getElementById('page-indicator');
         scrollContainer.addEventListener('scroll', () => {
@@ -363,7 +369,6 @@ window.addEventListener('DOMContentLoaded', () => {
 
     socket.on('announce', (message) => showToast(message));
 
-    // MODIFIED: Simplified rendering logic to toggle parent containers
     function renderLobby(players) {
         const me = players.find(p => p.playerId === myPersistentPlayerId);
         if (!me) { 

@@ -79,7 +79,6 @@ button:disabled { background-color: #555; border-color: #777; cursor: not-allowe
 .trick-icon.trick-won { animation: coin-pop 0.3s ease-out; }
 @keyframes coin-pop { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 
-/* MODIFIED: Added Zero Bid Icon style */
 .trick-icon.zero-bid-icon {
     display: flex;
     align-items: center;
@@ -133,7 +132,7 @@ button:disabled { background-color: #555; border-color: #777; cursor: not-allowe
 #trick-winner-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: flex; justify-content: center; align-items: center; font-size: 4em; color: var(--gold-accent); text-shadow: 2px 2px 10px black; z-index: 200; opacity: 0; transition: opacity 0.5s ease; pointer-events: none; }
 #trick-winner-overlay.show { opacity: 1; }
 
-.modal { position: absolute; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.7); pointer-events: none; }
+.modal { position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.7); pointer-events: none; }
 .modal-content { background-color: var(--teak-dark); border: 2px solid var(--gold-accent); color: var(--light-text); padding: 25px; border-radius: 10px; text-align: center; width: 100%; max-width: 95%; box-shadow: 0 0 30px rgba(0,0,0,0.5); position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); pointer-events: auto; }
 .modal.hidden { display: none !important; }
 .modal:not(.hidden) { display: flex; }
@@ -150,7 +149,6 @@ button:disabled { background-color: #555; border-color: #777; cursor: not-allowe
 .trump-reveal-card .suit-icon.no-trump-icon { font-size: 2.5em; font-weight: bold; color: var(--dark-text); }
 .trump-reveal-card .suit-name { font-weight: bold; font-size: 1.2em; margin-top: 5px; }
 
-/* MODIFIED: Replaced grid and item with styles for new tiles */
 .next-round-details-grid { display: flex; justify-content: space-around; align-items: stretch; margin-top: 15px; gap: 15px; }
 .next-round-detail-tile { flex: 1; background: var(--parchment-bg); color: var(--dark-text); border-radius: 8px; padding: 10px; text-align: center; border: 1px solid var(--teak-dark); }
 .next-round-detail-tile .tile-label { font-size: 0.9em; font-weight: bold; color: var(--teak-light); }
@@ -191,10 +189,8 @@ button:disabled { background-color: #555; border-color: #777; cursor: not-allowe
     #mobile-scroll-container { display: flex; flex-grow: 1; overflow-x: auto; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; padding-top: 50px; }
     #left-column, #center-column, #right-column { flex: 0 0 100%; width: 100%; max-height: 100%; box-sizing: border-box; padding: 15px; scroll-snap-align: center; overflow-y: auto; }
     
-    /* MODIFIED: Added padding for better scrolling */
     #left-column { padding-bottom: 50px; }
 
-    /* MODIFIED: Changed background to match desktop */
     #center-column { border: none; background-color: var(--felt-green); }
 
     .modal { position: fixed; }
@@ -211,10 +207,34 @@ button:disabled { background-color: #555; border-color: #777; cursor: not-allowe
     .vitals-tile .no-trump-value { font-size: 2em; padding: 5px 0; }
 
     .trick-icon { width: 28px; height: 28px; }
-    /* MODIFIED: Adjusted font size for zero bid icon on mobile */
     .trick-icon.zero-bid-icon { font-size: 0.6em; }
     
     #page-indicator { display: flex; justify-content: center; gap: 10px; position: fixed; bottom: 10px; left: 0; right: 0; z-index: 100; }
     .dot { width: 10px; height: 10px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.4); transition: background-color 0.3s ease; }
     .dot.active { background-color: white; }
+}
+
+/* MODIFIED: Added styles to constrain the scoreboard modal on desktop */
+@media (min-width: 851px) {
+    #scoreboard-modal {
+        background-color: transparent;
+        pointer-events: none; /* Allow clicks to pass through the transparent backdrop */
+    }
+
+    #scoreboard-modal .modal-content {
+        pointer-events: auto; /* Make the actual modal content clickable */
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        transform: none; /* Override the centering transform */
+        width: 40%;
+        max-width: 550px;
+        max-height: calc(100vh - 40px);
+        display: flex;
+        flex-direction: column;
+    }
+    
+    #scoreboard-modal #scoreboard-table-container {
+        overflow-y: auto; /* Make the table scrollable if content overflows */
+    }
 }

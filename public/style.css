@@ -66,14 +66,16 @@ button:disabled { background-color: #555; border-color: #777; cursor: not-allowe
 @keyframes flashing-border { 50% { border-color: var(--light-text); box-shadow: 0 0 15px var(--light-text); } }
 .player-slot-info { text-align: left; flex-grow: 1; display: flex; flex-direction: column; gap: 10px; overflow: hidden; }
 
-/* MODIFIED: Replaced old top-row with new plaque styles */
-.player-plaque-top { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 10px; }
-.player-slot-info .player-name { font-size: 1.8em; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 300px; }
+/* MODIFIED: Complete redesign for Player Plaque 2.0 */
+.player-plaque-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-top: 5px; }
+.player-slot-info .player-name { font-size: 1.8em; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 20ch; } /* Limit name length */
 .player-slot-info .player-name.disconnected { opacity: 0.6; font-style: italic; }
 .player-slot-info .player-name.removed { opacity: 0.4; text-decoration: line-through; }
-.player-actions-group { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
-.player-score-bubble { width: 40px; height: 40px; background-color: var(--busted-red); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.1em; border: 2px solid white; }
-.mark-afk-btn { font-size: 0.7em; padding: 4px 8px; margin-left: 0; background-color: #b8860b; border-color: #daa520; font-weight: normal; }
+
+.player-actions-group { display: flex; align-items: center; gap: 10px; flex-shrink: 0; margin-right: 10px; /* Space from card placeholder */ }
+.bid-tile { background-color: var(--parchment-bg); color: var(--dark-text); padding: 5px 10px; border-radius: 5px; font-weight: bold; font-size: 1em; border: 1px solid var(--teak-dark); }
+.player-score-bubble { width: 48px; height: 48px; background-color: var(--busted-red); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.2em; border: 2px solid white; flex-shrink: 0; }
+.mark-afk-btn { font-size: 0.8em; padding: 6px 12px; margin-left: 0; background-color: #b8860b; border-color: #daa520; font-weight: normal; flex-shrink: 0; }
 
 .bid-progress-container { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; justify-content: flex-start; }
 .bid-progress-container .bidding-text { font-style: italic; color: #ccc; }
@@ -137,6 +139,7 @@ button:disabled { background-color: #555; border-color: #777; cursor: not-allowe
 .modal:not(.hidden) { display: flex; }
 .modal-header { position: relative; cursor: move; padding-bottom: 15px; margin: -25px -25px 20px -25px; padding: 15px 25px; border-bottom: 1px solid var(--teak-light); user-select: none; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; }
 .modal-header h2 { margin: 0; font-size: 1.5em; }
+#warning-modal .modal-header h2 { color: var(--gold-accent); } /* Style for new warning modal */
 .modal-actions { margin-top: 20px; display: flex; justify-content: center; gap: 15px; }
 .modal-content .pause-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.75); display: flex; align-items: center; justify-content: center; color: var(--gold-accent); font-size: 1.5em; font-weight: bold; z-index: 10; border-radius: 8px; text-align: center; padding: 20px; box-sizing: border-box; }
 #lobby-return-countdown { margin-top: 20px; padding-top: 15px; border-top: 1px solid var(--teak-light); font-size: 1.2em; font-weight: bold; color: var(--gold-accent); }
@@ -195,10 +198,10 @@ button:disabled { background-color: #555; border-color: #777; cursor: not-allowe
     .modal { position: fixed; }
     .card-container { justify-content: center; }
     
-    /* MODIFIED: Mobile styles for the new plaque */
-    .player-slot-info .player-name { font-size: 1.2em; max-width: 150px; }
-    .player-score-bubble { width: 32px; height: 32px; font-size: 0.9em; }
-    .mark-afk-btn { padding: 3px 6px; font-size: 0.6em; }
+    .player-slot-info .player-name { font-size: 1.2em; max-width: 10ch; }
+    .bid-tile { font-size: 0.8em; padding: 4px 8px;}
+    .player-score-bubble { width: 36px; height: 36px; font-size: 1em; }
+    .mark-afk-btn { padding: 4px 8px; font-size: 0.7em; }
 
     .card { width: 80px; height: 112px; }
     .score-box span { font-size: 2em; }

@@ -78,6 +78,92 @@ window.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
+    
+    // MODIFIED: Added handler for new warning modal
+    function setupModalAndButtonListeners() {
+        document.getElementById('submit-bid-btn').addEventListener('click', () => { 
+            const bidInput = document.getElementById('bid-input'); 
+            socket.emit('submitBid', { bid: bidInput.value }); 
+        });
+        const confirmModal = document.getElementById('confirm-end-game-modal');
+        document.getElementById('endGameBtn').addEventListener('click', () => {
+            confirmModal.style.display = 'flex';
+            confirmModal.classList.remove('hidden');
+        });
+        document.getElementById('confirm-end-no-btn').addEventListener('click', () => {
+            confirmModal.style.display = 'none';
+            confirmModal.classList.add('hidden');
+        });
+        document.getElementById('confirm-end-yes-btn').addEventListener('click', () => { 
+            confirmModal.style.display = 'none';
+            confirmModal.classList.add('hidden');
+            socket.emit('endGame'); 
+        });
+        document.getElementById('start-next-round-btn').addEventListener('click', () => socket.emit('startNextRound'));
+        document.getElementById('end-game-from-modal-btn').addEventListener('click', () => socket.emit('endGame'));
+        
+        const scoreboardModal = document.getElementById('scoreboard-modal');
+        document.getElementById('player-ok-btn').addEventListener('click', () => {
+            scoreboardModal.style.display = 'none';
+            scoreboardModal.classList.add('hidden');
+        });
+
+        const lastTrickModal = document.getElementById('last-trick-modal');
+        document.getElementById('view-last-trick-btn').addEventListener('click', () => renderLastTrickModal(window.gameState));
+        document.getElementById('close-last-trick-modal').addEventListener('click', () => lastTrickModal.classList.add('hidden'));
+        lastTrickModal.addEventListener('click', (e) => {
+            if (e.target.id === 'last-trick-modal') {
+                lastTrickModal.classList.add('hidden');
+            }
+        });
+
+        const afkModal = document.getElementById('afk-notification-modal');
+        document.getElementById('im-back-btn').addEventListener('click', () => {
+            socket.emit('playerIsBack');
+            afkModal.style.display = 'none';
+            afkModal.classList.add('hidden');
+        });
+
+        const resetModal = document.getElementById('confirm-hard-reset-modal');
+        document.getElementById('confirm-reset-no-btn').addEventListener('click', () => {
+            resetModal.style.display = 'none';
+            resetModal.classList.add('hidden');
+        });
+        document.getElementById('confirm-reset-yes-btn').addEventListener('click', () => {
+            resetModal.style.display = 'none';
+            resetModal.classList.add('hidden');
+            socket.emit('hardReset');
+        });
+
+        const warningModal = document.getElementById('warning-modal');
+        document.getElementById('warning-modal-ok-btn').addEventListener('click', () => {
+            warningModal.style.display = 'none';
+            warningModal.classList.add('hidden');
+        });
+    }
+
+    // MODIFIED: Replaced server-side event for invalid bids with client-side modal
+    socket.on('invalidBid', ({ message }) => showWarningModal('Invalid Bid', message));
+
+    // MODIFIED: Replaced toast with conditional logic for modals vs. toasts
+    socket.on('announce', (message) => {
+        const isRuleViolation = message.includes('You must play a') || message.includes('Total bid cannot be');
+        if (isRuleViolation) {
+            showWarningModal('Rule Violation', message);
+        } else {
+            showToast(message);
+        }
+    });
+
+    function showWarningModal(title, message) {
+        document.getElementById('warning-modal-title').textContent = title;
+        document.getElementById('warning-modal-text').textContent = message;
+        const warningModal = document.getElementById('warning-modal');
+        warningModal.style.display = 'flex';
+        warningModal.classList.remove('hidden');
+    }
+
+    // --- (The rest of the file is included below but unchanged from the previous stable version) ---
 
     socket.on('updateGameState', (gs) => {
         const wasHidden = document.getElementById('scoreboard-modal').classList.contains('hidden') 
@@ -201,74 +287,7 @@ window.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    function setupJoinScreenListeners() {
-        document.getElementById('join-game-btn').addEventListener('click', () => {
-            const playerName = document.getElementById('player-name-input').value.trim();
-            if (playerName) {
-                sessionStorage.setItem('judgmentPlayerName', playerName);
-                socket.emit('joinGame', { playerName, playerId: myPersistentPlayerId });
-            }
-        });
-    }
-
-    function setupModalAndButtonListeners() {
-        document.getElementById('submit-bid-btn').addEventListener('click', () => { 
-            const bidInput = document.getElementById('bid-input'); 
-            socket.emit('submitBid', { bid: bidInput.value }); 
-        });
-        const confirmModal = document.getElementById('confirm-end-game-modal');
-        document.getElementById('endGameBtn').addEventListener('click', () => {
-            confirmModal.style.display = 'flex';
-            confirmModal.classList.remove('hidden');
-        });
-        document.getElementById('confirm-end-no-btn').addEventListener('click', () => {
-            confirmModal.style.display = 'none';
-            confirmModal.classList.add('hidden');
-        });
-        document.getElementById('confirm-end-yes-btn').addEventListener('click', () => { 
-            confirmModal.style.display = 'none';
-            confirmModal.classList.add('hidden');
-            socket.emit('endGame'); 
-        });
-        document.getElementById('start-next-round-btn').addEventListener('click', () => socket.emit('startNextRound'));
-        document.getElementById('end-game-from-modal-btn').addEventListener('click', () => socket.emit('endGame'));
-        
-        const scoreboardModal = document.getElementById('scoreboard-modal');
-        document.getElementById('player-ok-btn').addEventListener('click', () => {
-            scoreboardModal.style.display = 'none';
-            scoreboardModal.classList.add('hidden');
-        });
-
-        const lastTrickModal = document.getElementById('last-trick-modal');
-        document.getElementById('view-last-trick-btn').addEventListener('click', () => renderLastTrickModal(window.gameState));
-        document.getElementById('close-last-trick-modal').addEventListener('click', () => lastTrickModal.classList.add('hidden'));
-        lastTrickModal.addEventListener('click', (e) => {
-            if (e.target.id === 'last-trick-modal') {
-                lastTrickModal.classList.add('hidden');
-            }
-        });
-
-        const afkModal = document.getElementById('afk-notification-modal');
-        document.getElementById('im-back-btn').addEventListener('click', () => {
-            socket.emit('playerIsBack');
-            afkModal.style.display = 'none';
-            afkModal.classList.add('hidden');
-        });
-
-        const resetModal = document.getElementById('confirm-hard-reset-modal');
-        document.getElementById('confirm-reset-no-btn').addEventListener('click', () => {
-            resetModal.style.display = 'none';
-            resetModal.classList.add('hidden');
-        });
-        document.getElementById('confirm-reset-yes-btn').addEventListener('click', () => {
-            resetModal.style.display = 'none';
-            resetModal.classList.add('hidden');
-            socket.emit('hardReset');
-        });
-    }
-
     socket.on('promptForBid', ({ maxBid }) => { const actionBanner = document.getElementById('action-banner'); const bidInput = document.getElementById('bid-input'); document.getElementById('action-banner-text').textContent = 'Your turn to BID!'; document.getElementById('action-banner-input-area').style.display = 'flex'; actionBanner.style.display = 'block'; bidInput.innerHTML = ''; for (let i = 0; i <= maxBid; i++) { const option = document.createElement('option'); option.value = i; option.textContent = i; bidInput.appendChild(option); } });
-    socket.on('invalidBid', ({ message }) => showToast(message));
     
     socket.on('trickWon', ({ winnerName }) => { 
         const overlay = document.getElementById('trick-winner-overlay'); 
@@ -371,7 +390,7 @@ window.addEventListener('DOMContentLoaded', () => {
         }, 5000);
     });
 
-    socket.on('announce', (message) => showToast(message));
+    const toastNotification = document.getElementById('toast-notification'); function showToast(message) { toastNotification.textContent = message; toastNotification.classList.add('show'); setTimeout(() => toastNotification.classList.remove('show'), 3000); }
 
     function renderLobby(players) {
         const me = players.find(p => p.playerId === myPersistentPlayerId);
@@ -665,6 +684,14 @@ window.addEventListener('DOMContentLoaded', () => {
         const actionsGroup = document.createElement('div');
         actionsGroup.className = 'player-actions-group';
 
+        // Add Bid Tile if bid has been made
+        if (player.bid !== null) {
+            const bidTile = document.createElement('div');
+            bidTile.className = 'bid-tile';
+            bidTile.textContent = `Bid: ${player.bid}`;
+            actionsGroup.appendChild(bidTile);
+        }
+
         const myPlayer = gs.players.find(p => p.playerId === myPersistentPlayerId);
         if (myPlayer && myPlayer.isHost && player.playerId !== myPersistentPlayerId && player.status === 'Active') {
             const afkButton = document.createElement('button');
@@ -719,7 +746,6 @@ window.addEventListener('DOMContentLoaded', () => {
     function getCardDataFromElement(el, hand) { if (!el.dataset.card) return null; const [suit, rankName] = el.dataset.card.split('_'); const cardRank = Object.keys(rankMap).find(key => rankMap[key] === rankName); const cardSuit = suit.charAt(0).toUpperCase() + suit.slice(1); return hand.find(c => c.suit === cardSuit && c.rank === cardRank); }
     function createCardElement(card) { const cardEl = document.createElement('div'); cardEl.className = 'card'; cardEl.dataset.card = `${card.suit.toLowerCase()}_${rankMap[card.rank]}`; const rankName = rankMap[card.rank]; const suitName = card.suit.toLowerCase(); const imageName = `${suitName}_${rankName}.svg`; cardEl.style.backgroundImage = `url('/cards/${imageName}')`; return cardEl; }
     function getSuitSymbol(suit, isImage = false) { const symbols = { 'Spades': '♠️', 'Hearts': '♥️', 'Diamonds': '♦️', 'Clubs': '♣️', 'No Trump': 'NT' }; if (isImage) { if (suit === 'No Trump') return `<div class="no-trump">NO TRUMP</div>`; const suitName = suit?.toLowerCase(); if (!suitName) return '---'; return `<img src="/cards/suit_${suitName}.svg" alt="${suit}">`; } return symbols[suit] || suit; }
-    const toastNotification = document.getElementById('toast-notification'); function showToast(message) { toastNotification.textContent = message; toastNotification.classList.add('show'); setTimeout(() => toastNotification.classList.remove('show'), 3000); }
     
     function renderGameLog(gs) {
         const gameLogList = document.getElementById('game-log-list');
@@ -811,4 +837,5 @@ window.addEventListener('DOMContentLoaded', () => {
     makeDraggable(document.getElementById('last-trick-modal'));
     makeDraggable(document.getElementById('afk-notification-modal'));
     makeDraggable(document.getElementById('confirm-hard-reset-modal'));
+    makeDraggable(document.getElementById('warning-modal'));
 });

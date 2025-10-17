@@ -72,6 +72,20 @@ button:disabled { background-color: #555; border-color: #777; cursor: not-allowe
 .trick-icon.trick-won { animation: coin-pop 0.3s ease-out; }
 @keyframes coin-pop { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 
+/* MODIFIED: Added Zero Bid Icon style */
+.trick-icon.zero-bid-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #6c757d; /* A neutral gray */
+    border: 2px solid var(--light-text);
+    border-radius: 50%;
+    color: var(--light-text);
+    font-weight: bold;
+    font-size: 0.8em;
+    box-sizing: border-box;
+}
+
 .mark-afk-btn { font-size: 0.7em; padding: 4px 10px; margin-left: 15px; background-color: #b8860b; border-color: #daa520; font-weight: normal; }
 .mark-afk-btn:hover { background-color: #ffc400; border-color: #f5f5dc; }
 
@@ -128,9 +142,12 @@ button:disabled { background-color: #555; border-color: #777; cursor: not-allowe
 .trump-reveal-card .suit-icon { width: 60px; height: 60px; margin: 0 auto; }
 .trump-reveal-card .suit-icon.no-trump-icon { font-size: 2.5em; font-weight: bold; color: var(--dark-text); }
 .trump-reveal-card .suit-name { font-weight: bold; font-size: 1.2em; margin-top: 5px; }
-.next-round-details-grid { display: flex; justify-content: space-around; align-items: center; margin-top: 15px; font-size: 1.1em; }
-.next-round-detail-item { display: flex; align-items: center; gap: 8px; }
-.next-round-detail-item svg { width: 24px; height: 24px; fill: var(--light-text); }
+
+/* MODIFIED: Replaced grid and item with styles for new tiles */
+.next-round-details-grid { display: flex; justify-content: space-around; align-items: stretch; margin-top: 15px; gap: 15px; }
+.next-round-detail-tile { flex: 1; background: var(--parchment-bg); color: var(--dark-text); border-radius: 8px; padding: 10px; text-align: center; border: 1px solid var(--teak-dark); }
+.next-round-detail-tile .tile-label { font-size: 0.9em; font-weight: bold; color: var(--teak-light); }
+.next-round-detail-tile .tile-value { font-size: 1.3em; font-weight: bold; margin-top: 5px; }
 
 .score-table { width: 100%; border-collapse: collapse; margin-top: 20px; background-color: var(--teak-light); }
 .score-table th, .score-table td { border: 1px solid var(--teak-dark); padding: 8px; text-align: center; }
@@ -166,7 +183,13 @@ button:disabled { background-color: #555; border-color: #777; cursor: not-allowe
     #game-status-banner { position: fixed; top: 0; left: 0; right: 0; z-index: 100; margin: 0; border-radius: 0; font-size: 1.2em; padding: 8px; }
     #mobile-scroll-container { display: flex; flex-grow: 1; overflow-x: auto; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; padding-top: 50px; }
     #left-column, #center-column, #right-column { flex: 0 0 100%; width: 100%; max-height: 100%; box-sizing: border-box; padding: 15px; scroll-snap-align: center; overflow-y: auto; }
-    #center-column { border: none; background: transparent; }
+    
+    /* MODIFIED: Added padding for better scrolling */
+    #left-column { padding-bottom: 50px; }
+
+    /* MODIFIED: Changed background to match desktop */
+    #center-column { border: none; background-color: var(--felt-green); }
+
     .modal { position: fixed; }
     .card-container { justify-content: center; }
     .player-slot-info .name { font-size: 1.5em; }
@@ -181,6 +204,8 @@ button:disabled { background-color: #555; border-color: #777; cursor: not-allowe
     .vitals-tile .no-trump-value { font-size: 2em; padding: 5px 0; }
 
     .trick-icon { width: 28px; height: 28px; }
+    /* MODIFIED: Adjusted font size for zero bid icon on mobile */
+    .trick-icon.zero-bid-icon { font-size: 0.6em; }
     
     #page-indicator { display: flex; justify-content: center; gap: 10px; position: fixed; bottom: 10px; left: 0; right: 0; z-index: 100; }
     .dot { width: 10px; height: 10px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.4); transition: background-color 0.3s ease; }

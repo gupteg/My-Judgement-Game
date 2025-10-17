@@ -73,6 +73,7 @@ window.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // MODIFIED: Replaced SVG icons with new HTML for styled tiles
     function showScoreboard(gs) {
         const scoreboardModal = document.getElementById('scoreboard-modal');
         document.getElementById('scoreboard-title').textContent = `Round ${gs.roundNumber} Scores`;
@@ -81,8 +82,7 @@ window.addEventListener('DOMContentLoaded', () => {
         
         if (nextRoundInfo && nextRoundInfo.nextNumCards > 0) {
             preview.style.display = 'block';
-            const dealerIcon = `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="45" fill="#f5f5dc" stroke="#4a2c2a" stroke-width="5"></circle><text x="50" y="58" font-size="20" text-anchor="middle" fill="#4a2c2a" font-weight="bold">DEALER</text></svg>`;
-            const cardsIcon = `<svg viewBox="0 0 640 512"><path d="M624 32H16C7.16 32 0 39.16 0 48v32c0 8.84 7.16 16 16 16h608c8.84 0 16-7.16 16-16V48c0-8.84-7.16-16-16-16zm0 128H16c-8.84 0-16 7.16-16 16v32c0 8.84 7.16 16 16 16h608c8.84 0 16-7.16 16-16v-32c0-8.84-7.16-16-16-16zm0 128H16c-8.84 0-16 7.16-16 16v32c0 8.84 7.16 16 16 16h608c8.84 0 16-7.16 16-16v-32c0-8.84-7.16-16-16-16z"/></svg>`;
+            
             const trumpCardHTML = nextRoundInfo.nextTrumpSuit === 'No Trump' 
                 ? `<div class="suit-icon no-trump-icon">NT</div><div class="suit-name">No Trump</div>`
                 : `<img src="/cards/suit_${nextRoundInfo.nextTrumpSuit.toLowerCase()}.svg" class="suit-icon" alt="${nextRoundInfo.nextTrumpSuit}"><div class="suit-name">${nextRoundInfo.nextTrumpSuit} Trump</div>`;
@@ -91,8 +91,14 @@ window.addEventListener('DOMContentLoaded', () => {
                 <div class="plaque-title">Next Round</div>
                 <div class="trump-reveal-card">${trumpCardHTML}</div>
                 <div class="next-round-details-grid">
-                    <div class="next-round-detail-item">${dealerIcon}<span>${nextRoundInfo.nextDealerName}</span></div>
-                    <div class="next-round-detail-item">${cardsIcon}<span>${nextRoundInfo.nextNumCards} Cards</span></div>
+                    <div class="next-round-detail-tile">
+                        <div class="tile-label">Dealer</div>
+                        <div class="tile-value">${nextRoundInfo.nextDealerName}</div>
+                    </div>
+                    <div class="next-round-detail-tile">
+                        <div class="tile-label">Cards</div>
+                        <div class="tile-value">${nextRoundInfo.nextNumCards}</div>
+                    </div>
                 </div>
             `;
         } else {
@@ -567,38 +573,46 @@ window.addEventListener('DOMContentLoaded', () => {
         modal.classList.remove('hidden');
     }
 
-    // REVISED: Updated "Bust" logic
+    // MODIFIED: Complete rewrite of the function for Zero Bid logic.
     function createBidProgressHTML(player) {
         if (player.bid === null) {
             return `<span class="bidding-text">Bidding...</span>`;
         }
-
+    
         const bid = player.bid;
         const tricksWon = player.tricksWon;
-        const isBusted = tricksWon > bid;
         let iconsHTML = '';
-
+    
         const iconWon = `<svg class="trick-icon trick-won" viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="#daa520" stroke="#f5f5dc" stroke-width="4"/><path d="M30 50 L45 65 L70 40" stroke="#4a2c2a" stroke-width="8" fill="none" stroke-linecap="round"/></svg>`;
         const iconBusted = `<svg class="trick-icon trick-busted" viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="#c70039" stroke="#f5f5dc" stroke-width="4"/><path d="M30 30 L70 70 M70 30 L30 70" stroke="#f5f5dc" stroke-width="8" fill="none" stroke-linecap="round"/></svg>`;
         const iconTarget = `<svg class="trick-icon bid-target" viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="none" stroke="#f5f5dc" stroke-width="4" stroke-dasharray="10 5"/></svg>`;
-        
+    
+        // Special handling for a zero bid
+        if (bid === 0) {
+            if (tricksWon === 0) {
+                // Successful zero bid
+                return `<div class="trick-icon zero-bid-icon">ZERO</div>`;
+            } else {
+                // Busted zero bid - show one X for each trick taken
+                for (let i = 0; i < tricksWon; i++) {
+                    iconsHTML += iconBusted;
+                }
+                return iconsHTML;
+            }
+        }
+    
+        // Standard handling for non-zero bids
+        const isBusted = tricksWon > bid;
         if (isBusted) {
-             for (let i = 0; i < bid; i++) iconsHTML += iconWon; 
-             for (let i = 0; i < tricksWon - bid; i++) iconsHTML += iconBusted;
+            for (let i = 0; i < bid; i++) iconsHTML += iconWon;
+            for (let i = 0; i < tricksWon - bid; i++) iconsHTML += iconBusted;
         } else {
-             for (let i = 0; i < tricksWon; i++) iconsHTML += iconWon;
-             for (let i = tricksWon; i < bid; i++) iconsHTML += iconTarget;
+            for (let i = 0; i < tricksWon; i++) iconsHTML += iconWon;
+            for (let i = tricksWon; i < bid; i++) iconsHTML += iconTarget;
         }
-        
-        if (bid === 0 && tricksWon === 0 && window.gameState.phase === 'Playing') {
-             return iconTarget; 
-        } else if (bid === 0 && tricksWon === 0) {
-             return iconWon;
-        }
-
+    
         return iconsHTML;
     }
-
 
     function createPlayerSlot(player, gs) {
         const slot = document.createElement('div');

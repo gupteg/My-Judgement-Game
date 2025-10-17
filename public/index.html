@@ -19,15 +19,20 @@
         <h2>Game Lobby</h2>
         <h3>Players:</h3>
         <ul id="player-list"></ul>
-        <div class="lobby-actions">
+        
+        <div id="player-lobby-actions" class="lobby-actions">
             <button id="ready-btn">Ready</button>
-            <div id="host-controls" style="display: none;">
+        </div>
+        
+        <div id="host-lobby-actions" class="lobby-actions" style="display: none;">
+            <div id="host-controls">
                 <input type="password" id="host-password-input" placeholder="Host Password">
                 <button id="start-game-btn">Start Game</button>
                 <button id="end-session-btn">End Session</button>
                 <button id="hard-reset-btn" class="danger-btn">Hard Reset</button>
             </div>
         </div>
+
         <p id="host-message" style="display: none;">(Waiting for the host to start the game)</p>
     </div>
 

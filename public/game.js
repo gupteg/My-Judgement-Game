@@ -73,7 +73,6 @@ window.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // MODIFIED: Replaced SVG icons with new HTML for styled tiles
     function showScoreboard(gs) {
         const scoreboardModal = document.getElementById('scoreboard-modal');
         document.getElementById('scoreboard-title').textContent = `Round ${gs.roundNumber} Scores`;
@@ -160,7 +159,6 @@ window.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // MODIFIED: Added event listener for hard reset button
     function setupLobbyListeners() {
         document.getElementById('start-game-btn').addEventListener('click', () => {
             const password = document.getElementById('host-password-input').value;
@@ -203,7 +201,6 @@ window.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // MODIFIED: Added event listeners for hard reset confirmation modal
     function setupModalAndButtonListeners() {
         document.getElementById('submit-bid-btn').addEventListener('click', () => { 
             const bidInput = document.getElementById('bid-input'); 
@@ -366,7 +363,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
     socket.on('announce', (message) => showToast(message));
 
-    // MODIFIED: Updated to toggle the new host-controls div
+    // MODIFIED: Simplified rendering logic to toggle parent containers
     function renderLobby(players) {
         const me = players.find(p => p.playerId === myPersistentPlayerId);
         if (!me) { 
@@ -406,9 +403,17 @@ window.addEventListener('DOMContentLoaded', () => {
             playerItem.innerHTML = `<div>${content}</div><div>${readyStatus}${kickButton}</div>`;
             playerList.appendChild(playerItem);
         });
-
-        readyBtn.style.display = me.isHost ? 'none' : 'block';
-        document.getElementById('host-controls').style.display = me.isHost ? 'flex' : 'none';
+        
+        const playerActions = document.getElementById('player-lobby-actions');
+        const hostActions = document.getElementById('host-lobby-actions');
+        
+        if (me.isHost) {
+            playerActions.style.display = 'none';
+            hostActions.style.display = 'flex';
+        } else {
+            playerActions.style.display = 'flex';
+            hostActions.style.display = 'none';
+        }
         document.getElementById('host-message').style.display = me.isHost ? 'none' : 'block';
     }
 
@@ -602,13 +607,10 @@ window.addEventListener('DOMContentLoaded', () => {
         const iconBusted = `<svg class="trick-icon trick-busted" viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="#c70039" stroke="#f5f5dc" stroke-width="4"/><path d="M30 30 L70 70 M70 30 L30 70" stroke="#f5f5dc" stroke-width="8" fill="none" stroke-linecap="round"/></svg>`;
         const iconTarget = `<svg class="trick-icon bid-target" viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="none" stroke="#f5f5dc" stroke-width="4" stroke-dasharray="10 5"/></svg>`;
     
-        // Special handling for a zero bid
         if (bid === 0) {
             if (tricksWon === 0) {
-                // Successful zero bid
                 return `<div class="trick-icon zero-bid-icon">ZERO</div>`;
             } else {
-                // Busted zero bid - show one X for each trick taken
                 for (let i = 0; i < tricksWon; i++) {
                     iconsHTML += iconBusted;
                 }
@@ -616,7 +618,6 @@ window.addEventListener('DOMContentLoaded', () => {
             }
         }
     
-        // Standard handling for non-zero bids
         const isBusted = tricksWon > bid;
         if (isBusted) {
             for (let i = 0; i < bid; i++) iconsHTML += iconWon;

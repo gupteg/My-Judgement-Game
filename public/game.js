@@ -90,7 +90,6 @@ window.addEventListener('DOMContentLoaded', () => {
     }
 
     function setupModalAndButtonListeners() {
-        // MODIFIED: Hide banner on bid submission
         document.getElementById('submit-bid-btn').addEventListener('click', () => {
             const bidInput = document.getElementById('bid-input');
             socket.emit('submitBid', { bid: bidInput.value });
@@ -99,11 +98,14 @@ window.addEventListener('DOMContentLoaded', () => {
         });
 
         const confirmModal = document.getElementById('confirm-end-game-modal');
-        // Use a more specific selector if endGameBtn is not unique, otherwise keep as is.
-        document.getElementById('endGameBtn').addEventListener('click', () => {
-            confirmModal.style.display = 'flex';
-            confirmModal.classList.remove('hidden');
-        });
+        // Ensure endGameBtn exists before adding listener
+        const endGameBtn = document.getElementById('endGameBtn');
+        if (endGameBtn) {
+            endGameBtn.addEventListener('click', () => {
+                confirmModal.style.display = 'flex';
+                confirmModal.classList.remove('hidden');
+            });
+        }
         document.getElementById('confirm-end-no-btn').addEventListener('click', () => {
             confirmModal.style.display = 'none';
             confirmModal.classList.add('hidden');
@@ -156,6 +158,8 @@ window.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // This function now *only* ensures the banner is visible and populated.
+    // It doesn't assume it needs to hide it otherwise.
     socket.on('promptForBid', ({ maxBid }) => {
         const actionBanner = document.getElementById('action-banner');
         const bidInput = document.getElementById('bid-input');
@@ -194,8 +198,6 @@ window.addEventListener('DOMContentLoaded', () => {
         warningModal.style.display = 'flex';
         warningModal.classList.remove('hidden');
     }
-
-    // --- (The rest of the file remains unchanged) ---
 
     socket.on('updateGameState', (gs) => {
         const wasHidden = document.getElementById('scoreboard-modal').classList.contains('hidden')
@@ -482,10 +484,14 @@ window.addEventListener('DOMContentLoaded', () => {
         renderCenterColumn(gs);
         renderRightColumn(gs);
         updateGameStatusBanner(gs);
-        document.getElementById('endGameBtn').style.display = myPlayer.isHost ? 'block' : 'none';
+        // Ensure endGameBtn exists before trying to access its style
+        const endGameBtn = document.getElementById('endGameBtn');
+        if (endGameBtn) {
+            endGameBtn.style.display = myPlayer.isHost ? 'block' : 'none';
+        }
     }
 
-    // MODIFIED: Removed the unconditional hiding of the action banner.
+    // MODIFIED: Added explicit check for bidding phase to show banner.
     function renderLeftColumn(gs, localPlayer) {
         if (!localPlayer) return;
         document.getElementById('rearrange-hand-btn').style.display = (localPlayer.hand && localPlayer.hand.length > 0) ? 'block' : 'none';
@@ -525,37 +531,53 @@ window.addEventListener('DOMContentLoaded', () => {
         const myIndex = gs.players.findIndex(p => p.playerId === myPersistentPlayerId);
         const actionBanner = document.getElementById('action-banner');
         const actionText = document.getElementById('action-banner-text');
-        const inputArea = document.getElementById('action-banner-input-area'); // Get reference to input area
+        const inputArea = document.getElementById('action-banner-input-area');
 
         if(actionBannerCountdownInterval) clearInterval(actionBannerCountdownInterval);
 
-        // Explicitly hide banner elements unless conditions are met
-        actionBanner.style.display = 'none';
-        inputArea.style.display = 'none';
+        let showBanner = false; // Default to hidden
 
-        if (gs.isPaused) {
-            // Banner remains hidden if paused
-        } else if (gs.phase === 'Bidding' && gs.biddingPlayerIndex === myIndex) {
-            // Bidding is handled by promptForBid event, don't show here unless needed as fallback
-            // Potentially add logic here if promptForBid sometimes fails
+        if (!gs.isPaused) {
+             if (gs.phase === 'Bidding' && gs.biddingPlayerIndex === myIndex) {
+                // Check if the banner isn't already visible from promptForBid (avoids flicker)
+                if (actionBanner.style.display !== 'block') {
+                    actionText.textContent = 'Your turn to BID!';
+                    inputArea.style.display = 'flex';
+                    // Re-populate dropdown just in case state changed mid-render
+                    const bidInput = document.getElementById('bid-input');
+                    bidInput.innerHTML = '';
+                    for (let i = 0; i <= gs.numCardsToDeal; i++) {
+                        const option = document.createElement('option');
+                        option.value = i;
+                        option.textContent = i;
+                        bidInput.appendChild(option);
+                    }
+                }
+                showBanner = true; // Mark banner to be shown
+            }
+            else if (gs.phase === 'Playing' && gs.currentPlayerIndex === myIndex && localPlayer.hand.length > 0) {
+                actionText.textContent = 'Your turn to PLAY!';
+                inputArea.style.display = 'none';
+                showBanner = true;
+            } else if (gs.phase === 'TrickReview' && gs.trickWinnerId === localPlayer.playerId) {
+                const updateActionTimer = () => {
+                    const remaining = Math.max(0, Math.round((gs.nextTrickReviewEnd - Date.now()) / 1000));
+                    actionText.textContent = `Your turn to play in ${remaining}s`;
+                    if (remaining <= 0) clearInterval(actionBannerCountdownInterval);
+                };
+                updateActionTimer(); // Run immediately
+                actionBannerCountdownInterval = setInterval(updateActionTimer, 1000);
+                inputArea.style.display = 'none';
+                showBanner = true;
+            }
         }
-        else if (gs.phase === 'Playing' && gs.currentPlayerIndex === myIndex && localPlayer.hand.length > 0) {
-            actionText.textContent = 'Your turn to PLAY!';
-            inputArea.style.display = 'none'; // Ensure bid input is hidden
-            actionBanner.style.display = 'block'; // Show banner for playing turn
-        } else if (gs.phase === 'TrickReview' && gs.trickWinnerId === localPlayer.playerId) {
-            const updateActionTimer = () => {
-                const remaining = Math.max(0, Math.round((gs.nextTrickReviewEnd - Date.now()) / 1000));
-                actionText.textContent = `Your turn to play in ${remaining}s`;
-                if (remaining <= 0) clearInterval(actionBannerCountdownInterval);
-            };
-            updateActionTimer();
-            actionBannerCountdownInterval = setInterval(updateActionTimer, 1000);
-            inputArea.style.display = 'none'; // Ensure bid input is hidden
-            actionBanner.style.display = 'block'; // Show banner for trick review countdown
+
+        actionBanner.style.display = showBanner ? 'block' : 'none';
+        if (!showBanner || gs.phase !== 'Bidding') {
+             inputArea.style.display = 'none'; // Ensure input area is hidden if not bidding turn
         }
-        // No 'else' needed here - banner remains hidden if none of the above conditions are met
     }
+
 
     function renderCenterColumn(gs) { const slotsContainer = document.getElementById('player-slots-container'); slotsContainer.innerHTML = ''; const playerOrder = getFixedPlayerOrder(gs.players, gs.dealerIndex); playerOrder.forEach(player => { slotsContainer.appendChild(createPlayerSlot(player, gs)); }); }
 
@@ -732,8 +754,7 @@ window.addEventListener('DOMContentLoaded', () => {
             const afkButton = document.createElement('button');
             afkButton.className = 'mark-afk-btn';
             afkButton.textContent = 'AFK';
-            // NOTE: Event listener for AFK button needs to be handled by delegation or attached here.
-            // For simplicity with current structure, attaching directly here.
+            // Attach listener directly here as it's created dynamically
             afkButton.addEventListener('click', (e) => {
                 e.stopPropagation();
                 socket.emit('markPlayerAFK', { playerIdToMark: player.playerId });

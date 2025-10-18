@@ -20,14 +20,12 @@ window.addEventListener('DOMContentLoaded', () => {
 
     const rankMap = { 'A': 'ace', 'K': 'king', 'Q': 'queen', 'J': 'jack', '10': '10', '9': '9', '8': '8', '7': '7', '6': '6', '5': '5', '4': '4', '3': '3', '2': '2' };
 
-    // CORRECTED: Ensured setupJoinScreenListeners is DEFINED and called.
-    setupJoinScreenListeners(); // Handles the initial Join Game button
-    setupLobbyEventListeners(); // Handles buttons within the lobby screen
-    setupModalAndButtonListeners(); // Handles buttons within modals
-    setupDynamicEventListeners(); // Handles non-button events like scrolling
+    setupJoinScreenListeners();
+    setupLobbyEventListeners();
+    setupModalAndButtonListeners();
+    setupDynamicEventListeners();
     document.getElementById('rearrange-hand-btn').addEventListener('click', handleRearrangeHand);
 
-    // CORRECTED: Added the missing function definition.
     function setupJoinScreenListeners() {
         document.getElementById('join-game-btn').addEventListener('click', () => {
             const playerName = document.getElementById('player-name-input').value.trim();
@@ -38,7 +36,6 @@ window.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // This function correctly uses event delegation for lobby elements.
     function setupLobbyEventListeners() {
         const playerActions = document.getElementById('player-lobby-actions');
         const hostActions = document.getElementById('host-lobby-actions');
@@ -93,11 +90,16 @@ window.addEventListener('DOMContentLoaded', () => {
     }
 
     function setupModalAndButtonListeners() {
+        // MODIFIED: Hide banner on bid submission
         document.getElementById('submit-bid-btn').addEventListener('click', () => {
             const bidInput = document.getElementById('bid-input');
             socket.emit('submitBid', { bid: bidInput.value });
+            // Hide banner immediately after submitting bid
+            document.getElementById('action-banner').style.display = 'none';
         });
+
         const confirmModal = document.getElementById('confirm-end-game-modal');
+        // Use a more specific selector if endGameBtn is not unique, otherwise keep as is.
         document.getElementById('endGameBtn').addEventListener('click', () => {
             confirmModal.style.display = 'flex';
             confirmModal.classList.remove('hidden');
@@ -153,6 +155,26 @@ window.addEventListener('DOMContentLoaded', () => {
             warningModal.classList.add('hidden');
         });
     }
+
+    socket.on('promptForBid', ({ maxBid }) => {
+        const actionBanner = document.getElementById('action-banner');
+        const bidInput = document.getElementById('bid-input');
+        const actionText = document.getElementById('action-banner-text');
+        const inputArea = document.getElementById('action-banner-input-area');
+
+        actionText.textContent = 'Your turn to BID!';
+        inputArea.style.display = 'flex'; // Ensure input area is visible
+        actionBanner.style.display = 'block'; // Explicitly show banner
+
+        bidInput.innerHTML = ''; // Clear previous options
+        for (let i = 0; i <= maxBid; i++) {
+            const option = document.createElement('option');
+            option.value = i;
+            option.textContent = i;
+            bidInput.appendChild(option);
+        }
+    });
+
 
     socket.on('invalidBid', ({ message }) => showWarningModal('Invalid Bid', message));
 
@@ -463,6 +485,7 @@ window.addEventListener('DOMContentLoaded', () => {
         document.getElementById('endGameBtn').style.display = myPlayer.isHost ? 'block' : 'none';
     }
 
+    // MODIFIED: Removed the unconditional hiding of the action banner.
     function renderLeftColumn(gs, localPlayer) {
         if (!localPlayer) return;
         document.getElementById('rearrange-hand-btn').style.display = (localPlayer.hand && localPlayer.hand.length > 0) ? 'block' : 'none';
@@ -498,19 +521,28 @@ window.addEventListener('DOMContentLoaded', () => {
         });
         setupHandInteractions(cardContainer, localPlayer.hand);
         handArea.appendChild(cardContainer);
+
         const myIndex = gs.players.findIndex(p => p.playerId === myPersistentPlayerId);
         const actionBanner = document.getElementById('action-banner');
         const actionText = document.getElementById('action-banner-text');
+        const inputArea = document.getElementById('action-banner-input-area'); // Get reference to input area
+
         if(actionBannerCountdownInterval) clearInterval(actionBannerCountdownInterval);
+
+        // Explicitly hide banner elements unless conditions are met
+        actionBanner.style.display = 'none';
+        inputArea.style.display = 'none';
+
         if (gs.isPaused) {
-            actionBanner.style.display = 'none';
+            // Banner remains hidden if paused
         } else if (gs.phase === 'Bidding' && gs.biddingPlayerIndex === myIndex) {
-            // Handled by promptForBid
+            // Bidding is handled by promptForBid event, don't show here unless needed as fallback
+            // Potentially add logic here if promptForBid sometimes fails
         }
         else if (gs.phase === 'Playing' && gs.currentPlayerIndex === myIndex && localPlayer.hand.length > 0) {
             actionText.textContent = 'Your turn to PLAY!';
-            document.getElementById('action-banner-input-area').style.display = 'none';
-            actionBanner.style.display = 'block';
+            inputArea.style.display = 'none'; // Ensure bid input is hidden
+            actionBanner.style.display = 'block'; // Show banner for playing turn
         } else if (gs.phase === 'TrickReview' && gs.trickWinnerId === localPlayer.playerId) {
             const updateActionTimer = () => {
                 const remaining = Math.max(0, Math.round((gs.nextTrickReviewEnd - Date.now()) / 1000));
@@ -519,12 +551,10 @@ window.addEventListener('DOMContentLoaded', () => {
             };
             updateActionTimer();
             actionBannerCountdownInterval = setInterval(updateActionTimer, 1000);
-            document.getElementById('action-banner-input-area').style.display = 'none';
-            actionBanner.style.display = 'block';
+            inputArea.style.display = 'none'; // Ensure bid input is hidden
+            actionBanner.style.display = 'block'; // Show banner for trick review countdown
         }
-        else {
-            actionBanner.style.display = 'none';
-        }
+        // No 'else' needed here - banner remains hidden if none of the above conditions are met
     }
 
     function renderCenterColumn(gs) { const slotsContainer = document.getElementById('player-slots-container'); slotsContainer.innerHTML = ''; const playerOrder = getFixedPlayerOrder(gs.players, gs.dealerIndex); playerOrder.forEach(player => { slotsContainer.appendChild(createPlayerSlot(player, gs)); }); }
@@ -773,6 +803,8 @@ window.addEventListener('DOMContentLoaded', () => {
         let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
 
         const dragMouseDown = (e) => {
+            // Only allow dragging if the direct target is the header
+            if (e.target !== header) return;
             e.preventDefault();
             pos3 = e.clientX;
             pos4 = e.clientY;
@@ -787,13 +819,17 @@ window.addEventListener('DOMContentLoaded', () => {
             pos3 = e.clientX;
             pos4 = e.clientY;
 
-            if (modalContent.style.transform) {
-                modalContent.style.transform = '';
+            // Use translate for smoother performance if transform isn't manually set
+            if (!modalContent.style.transform || modalContent.style.transform === 'translate(-50%, -50%)') {
+                 modalContent.style.left = '50%';
+                 modalContent.style.top = '50%';
+                 modalContent.style.transform = `translate(calc(-50% + ${modalContent.offsetLeft - pos1}px), calc(-50% + ${modalContent.offsetTop - pos2}px))`;
+            } else {
+                 modalContent.style.top = (modalContent.offsetTop - pos2) + "px";
+                 modalContent.style.left = (modalContent.offsetLeft - pos1) + "px";
             }
-
-            modalContent.style.top = (modalContent.offsetTop - pos2) + "px";
-            modalContent.style.left = (modalContent.offsetLeft - pos1) + "px";
         };
+
 
         const closeDragElement = () => {
             document.onmouseup = null;
@@ -801,6 +837,8 @@ window.addEventListener('DOMContentLoaded', () => {
         };
 
         const dragTouchStart = (e) => {
+            // Only allow dragging if the direct target is the header
+             if (e.target !== header) return;
             if (e.touches.length === 1) {
                 const touch = e.touches[0];
                 pos3 = touch.clientX;
@@ -812,6 +850,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
         const elementTouchDrag = (e) => {
             if (e.touches.length === 1) {
+                // Prevent default scrolling behavior during drag
                 e.preventDefault();
                 const touch = e.touches[0];
                 pos1 = pos3 - touch.clientX;
@@ -819,14 +858,18 @@ window.addEventListener('DOMContentLoaded', () => {
                 pos3 = touch.clientX;
                 pos4 = touch.clientY;
 
-                if (modalContent.style.transform) {
-                    modalContent.style.transform = '';
+                 // Use translate for smoother performance
+                if (!modalContent.style.transform || modalContent.style.transform === 'translate(-50%, -50%)') {
+                     modalContent.style.left = '50%';
+                     modalContent.style.top = '50%';
+                     modalContent.style.transform = `translate(calc(-50% + ${modalContent.offsetLeft - pos1}px), calc(-50% + ${modalContent.offsetTop - pos2}px))`;
+                } else {
+                    modalContent.style.top = (modalContent.offsetTop - pos2) + "px";
+                    modalContent.style.left = (modalContent.offsetLeft - pos1) + "px";
                 }
-
-                modalContent.style.top = (modalContent.offsetTop - pos2) + "px";
-                modalContent.style.left = (modalContent.offsetLeft - pos1) + "px";
             }
         };
+
 
         const closeTouchDragElement = () => {
             document.ontouchend = null;
@@ -834,8 +877,9 @@ window.addEventListener('DOMContentLoaded', () => {
         };
 
         header.addEventListener('mousedown', dragMouseDown);
-        header.addEventListener('touchstart', dragTouchStart);
+        header.addEventListener('touchstart', dragTouchStart, { passive: false }); // Need passive: false to preventDefault in touchmove
     }
+
 
     makeDraggable(document.getElementById('scoreboard-modal'));
     makeDraggable(document.getElementById('confirm-end-game-modal'));

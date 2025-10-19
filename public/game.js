@@ -9,7 +9,7 @@ window.addEventListener('DOMContentLoaded', () => {
     let lobbyReturnInterval;
     let trickReviewInterval;
     let actionBannerCountdownInterval;
-    let pendingBid = null; // *** NEW: Store bid during confirmation ***
+    let pendingBid = null; // *** Store bid during confirmation ***
 
     socket.on('connect', () => {
         myPersistentPlayerId = sessionStorage.getItem('judgmentPlayerId');
@@ -91,7 +91,7 @@ window.addEventListener('DOMContentLoaded', () => {
     }
 
     function setupModalAndButtonListeners() {
-        // *** MODIFIED: This button now opens the confirm modal ***
+        // *** This button now opens the confirm modal ***
         document.getElementById('submit-bid-btn').addEventListener('click', () => {
             const bidInput = document.getElementById('bid-input');
             pendingBid = bidInput.value; // Store the bid
@@ -103,7 +103,7 @@ window.addEventListener('DOMContentLoaded', () => {
             confirmModal.classList.remove('hidden');
         });
 
-        // *** NEW: Listener for the "Confirm Bid" button ***
+        // *** Listener for the "Confirm Bid" button ***
         document.getElementById('confirm-bid-yes-btn').addEventListener('click', () => {
             if (pendingBid !== null) {
                 socket.emit('submitBid', { bid: pendingBid });
@@ -116,7 +116,7 @@ window.addEventListener('DOMContentLoaded', () => {
             pendingBid = null; // Clear the stored bid
         });
 
-        // *** NEW: Listener for the "Revise" button ***
+        // *** Listener for the "Revise" button ***
         document.getElementById('confirm-bid-no-btn').addEventListener('click', () => {
             // Just hide the modal and clear the bid
             const confirmModal = document.getElementById('confirm-bid-modal');
@@ -341,8 +341,17 @@ window.addEventListener('DOMContentLoaded', () => {
 
     function setupHandInteractions(container, hand) {
         container.addEventListener('click', e => { if (e.target.classList.contains('card') && e.target.classList.contains('clickable')) { const card = getCardDataFromElement(e.target, hand); if (card) socket.emit('playCard', { card }); } });
-        container.addEventListener('dragstart', e => { if (e.target.classList.contains('card')) { e.target.classList.add('dragging'); } });
+        
+        container.addEventListener('dragstart', e => { 
+            if (e.target.classList.contains('card')) { 
+                e.target.classList.add('dragging'); 
+                // --- NEW: Add card data to the drag event ---
+                e.dataTransfer.setData('text/plain', e.target.dataset.card);
+            } 
+        });
+
         container.addEventListener('dragend', e => { if (e.target.classList.contains('card')) { e.target.classList.remove('dragging'); const newElements = [...container.querySelectorAll('.card')]; const newHand = newElements.map(el => getCardDataFromElement(el, hand)).filter(Boolean); if (newHand.length === hand.length) { socket.emit('rearrangeHand', { newHand }); } } });
+        
         container.addEventListener('dragover', e => {
             e.preventDefault();
             const draggingCard = document.querySelector('.dragging'); if (!draggingCard) return;
@@ -809,6 +818,37 @@ window.addEventListener('DOMContentLoaded', () => {
 
         const cardPlaceholder = document.createElement('div');
         cardPlaceholder.className = 'card-placeholder';
+
+        // --- NEW: Add drag-and-drop listeners ONLY for my player's placeholder ---
+        if (player.playerId === myPersistentPlayerId) {
+            const localPlayer = window.gameState.players.find(p => p.playerId === myPersistentPlayerId);
+
+            cardPlaceholder.addEventListener('dragover', (e) => {
+                const isMyTurn = (gs.phase === 'Playing' && gs.players[gs.currentPlayerIndex]?.playerId === player.playerId && !gs.isPaused);
+                if (isMyTurn) {
+                    e.preventDefault(); // Allow drop
+                    cardPlaceholder.classList.add('droppable');
+                }
+            });
+
+            cardPlaceholder.addEventListener('dragleave', () => {
+                cardPlaceholder.classList.remove('droppable');
+            });
+
+            cardPlaceholder.addEventListener('drop', (e) => {
+                e.preventDefault();
+                cardPlaceholder.classList.remove('droppable');
+                const cardIdentifier = e.dataTransfer.getData('text/plain');
+                if (cardIdentifier && localPlayer) {
+                    const card = getCardDataFromElement({ dataset: { card: cardIdentifier } }, localPlayer.hand);
+                    if (card) {
+                        socket.emit('playCard', { card });
+                    }
+                }
+            });
+        }
+        // --- END NEW ---
+
         const playedCard = gs.currentTrick.find(p => p.playerId === player.playerId);
         if (playedCard) {
             const cardEl = createCardElement(playedCard.card);
@@ -938,5 +978,5 @@ window.addEventListener('DOMContentLoaded', () => {
     makeDraggable(document.getElementById('afk-notification-modal'));
     makeDraggable(document.getElementById('confirm-hard-reset-modal'));
     makeDraggable(document.getElementById('warning-modal'));
-    makeDraggable(document.getElementById('confirm-bid-modal')); // *** NEW: Make new modal draggable ***
+    makeDraggable(document.getElementById('confirm-bid-modal')); // *** Make new modal draggable ***
 });

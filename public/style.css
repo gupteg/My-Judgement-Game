@@ -101,6 +101,14 @@ button:disabled { background-color: #555; border-color: #777; cursor: not-allowe
 .card.newly-played { animation: play-card-anim 0.4s ease-out; }
 @keyframes play-card-anim { from { transform: scale(0.5) rotate(-15deg); opacity: 0; } to { transform: scale(1) rotate(0deg); opacity: 1; } }
 .winning-indicator { position: absolute; left: -25px; top: 50%; transform: translateY(-50%); font-size: 24px; color: var(--gold-accent); text-shadow: 0 0 5px black; }
+
+/* --- NEW: Style for drag-and-drop target --- */
+.card-placeholder.droppable {
+    background-color: rgba(218, 165, 32, 0.2); /* gold-accent with alpha */
+    border-style: solid;
+    border-color: var(--gold-accent);
+}
+
 #round-title-board { background: var(--teak-light); padding: 10px; border-radius: 8px; text-align: center; font-size: 1.5em; font-weight: bold; color: var(--light-text); border: 2px solid var(--teak-dark); }
 
 .info-board-row { display: flex; gap: 15px; }
@@ -242,6 +250,9 @@ button:disabled { background-color: #555; border-color: #777; cursor: not-allowe
     
     #scoreboard-modal #scoreboard-table-container {
         overflow-y: auto;
+        /* --- FIX: Added flex-shrink and min-height to fix overflow --- */
+        flex-shrink: 1;
+        min-height: 0;
     }
 }
 

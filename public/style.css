@@ -244,3 +244,30 @@ button:disabled { background-color: #555; border-color: #777; cursor: not-allowe
         overflow-y: auto;
     }
 }
+
+/* --- *** NEW STYLES FOR BID CONFIRMATION MODAL *** --- */
+#confirm-bid-modal .modal-content {
+    max-width: 400px; /* Smaller modal */
+}
+
+#confirm-bid-text {
+    font-size: 1.5em;
+    margin: 10px 0;
+}
+
+#confirm-bid-text strong {
+    font-size: 2em;
+    color: var(--gold-accent);
+    display: block; /* Puts the number on its own line */
+    margin-top: 5px;
+}
+
+.confirm-btn {
+    background-color: var(--gold-accent);
+    color: var(--teak-dark);
+}
+
+.confirm-btn:hover {
+    background-color: var(--light-text);
+    border-color: var(--light-text);
+}

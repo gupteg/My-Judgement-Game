@@ -1,6 +1,6 @@
 window.addEventListener('DOMContentLoaded', () => {
     // FIX: Use the full Render URL for a reliable connection
-    const socket = io('https://my-judgement-game.onrender.com');
+    const socket = io('https.my-judgement-game.onrender.com');
 
     window.gameState = {};
     let myPersistentPlayerId = sessionStorage.getItem('judgmentPlayerId');
@@ -9,6 +9,7 @@ window.addEventListener('DOMContentLoaded', () => {
     let lobbyReturnInterval;
     let trickReviewInterval;
     let actionBannerCountdownInterval;
+    let pendingBid = null; // *** NEW: Store bid during confirmation ***
 
     socket.on('connect', () => {
         myPersistentPlayerId = sessionStorage.getItem('judgmentPlayerId');
@@ -90,12 +91,41 @@ window.addEventListener('DOMContentLoaded', () => {
     }
 
     function setupModalAndButtonListeners() {
+        // *** MODIFIED: This button now opens the confirm modal ***
         document.getElementById('submit-bid-btn').addEventListener('click', () => {
             const bidInput = document.getElementById('bid-input');
-            socket.emit('submitBid', { bid: bidInput.value });
-            // Hide banner immediately after submitting bid
-            document.getElementById('action-banner').style.display = 'none';
+            pendingBid = bidInput.value; // Store the bid
+            
+            // Populate and show the modal
+            document.getElementById('confirm-bid-text').innerHTML = `You are bidding: <strong>${pendingBid}</strong>`;
+            const confirmModal = document.getElementById('confirm-bid-modal');
+            confirmModal.style.display = 'flex';
+            confirmModal.classList.remove('hidden');
         });
+
+        // *** NEW: Listener for the "Confirm Bid" button ***
+        document.getElementById('confirm-bid-yes-btn').addEventListener('click', () => {
+            if (pendingBid !== null) {
+                socket.emit('submitBid', { bid: pendingBid });
+            }
+            // Hide modal and banner
+            const confirmModal = document.getElementById('confirm-bid-modal');
+            confirmModal.style.display = 'none';
+            confirmModal.classList.add('hidden');
+            document.getElementById('action-banner').style.display = 'none';
+            pendingBid = null; // Clear the stored bid
+        });
+
+        // *** NEW: Listener for the "Revise" button ***
+        document.getElementById('confirm-bid-no-btn').addEventListener('click', () => {
+            // Just hide the modal and clear the bid
+            const confirmModal = document.getElementById('confirm-bid-modal');
+            confirmModal.style.display = 'none';
+            confirmModal.classList.add('hidden');
+            pendingBid = null;
+            // The action banner remains visible, allowing reentry
+        });
+
 
         const confirmModal = document.getElementById('confirm-end-game-modal');
         // Ensure endGameBtn exists before adding listener
@@ -908,4 +938,5 @@ window.addEventListener('DOMContentLoaded', () => {
     makeDraggable(document.getElementById('afk-notification-modal'));
     makeDraggable(document.getElementById('confirm-hard-reset-modal'));
     makeDraggable(document.getElementById('warning-modal'));
+    makeDraggable(document.getElementById('confirm-bid-modal')); // *** NEW: Make new modal draggable ***
 });

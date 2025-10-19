@@ -142,9 +142,30 @@ button:disabled { background-color: #555; border-color: #777; cursor: not-allowe
 #trick-winner-overlay.show { opacity: 1; }
 
 .modal { position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.7); pointer-events: none; }
-.modal-content { background-color: var(--teak-dark); border: 2px solid var(--gold-accent); color: var(--light-text); padding: 25px; border-radius: 10px; text-align: center; width: 100%; max-width: 95%; box-shadow: 0 0 30px rgba(0,0,0,0.5); position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); pointer-events: auto; /* Ensure content is interactive */ display: flex; flex-direction: column; max-height: 90vh; /* Prevent modal from exceeding viewport height */ }
+.modal-content {
+    background-color: var(--teak-dark);
+    border: 2px solid var(--gold-accent);
+    color: var(--light-text);
+    padding: 25px;
+    border-radius: 10px;
+    text-align: center;
+    width: 100%;
+    max-width: 95%;
+    box-shadow: 0 0 30px rgba(0,0,0,0.5);
+    /* --- REMOVED: Absolute centering properties --- */
+    pointer-events: auto; /* Ensure content is interactive */
+    display: flex;
+    flex-direction: column;
+    max-height: 90vh; /* Prevent modal from exceeding viewport height */
+    position: relative; /* Needed for JS positioning */
+}
 .modal.hidden { display: none !important; }
-.modal:not(.hidden) { display: flex; /* Changed from default for consistency */ justify-content: center; /* Center horizontally */ align-items: center; /* Center vertically */ pointer-events: auto; /* Allow clicks on backdrop to close (optional) */ }
+.modal:not(.hidden) {
+    display: flex; /* Changed from default for consistency */
+    justify-content: center; /* Center horizontally */
+    align-items: center; /* Center vertically */
+    pointer-events: auto; /* Allow clicks on backdrop to close (optional) */
+}
 .modal-header { position: relative; cursor: move; padding-bottom: 15px; margin: -25px -25px 20px -25px; padding: 15px 25px; border-bottom: 1px solid var(--teak-light); user-select: none; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; flex-shrink: 0; /* Prevent header from shrinking */ }
 .modal-header h2 { margin: 0; font-size: 1.5em; }
 #warning-modal .modal-header h2 { color: var(--gold-accent); } /* Style for new warning modal */
@@ -152,7 +173,7 @@ button:disabled { background-color: #555; border-color: #777; cursor: not-allowe
 .modal-content .pause-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.75); display: flex; align-items: center; justify-content: center; color: var(--gold-accent); font-size: 1.5em; font-weight: bold; z-index: 10; border-radius: 8px; text-align: center; padding: 20px; box-sizing: border-box; }
 #lobby-return-countdown { margin-top: 20px; padding-top: 15px; border-top: 1px solid var(--teak-light); font-size: 1.2em; font-weight: bold; color: var(--gold-accent); }
 
-/* --- NEW: Style for the scrollable content wrapper --- */
+/* Style for the scrollable content wrapper */
 .modal-scrollable-content {
     overflow-y: auto;
     padding-right: 10px; /* Space for scrollbar */
@@ -213,7 +234,7 @@ button:disabled { background-color: #555; border-color: #777; cursor: not-allowe
     #center-column { border: none; background-color: var(--felt-green); }
 
     .modal { position: fixed; }
-    .modal-content { max-width: 90%; max-height: 85vh; } /* Adjust size for mobile */
+    .modal-content { max-width: 90%; max-height: 85vh; /* Reset position for mobile */ position: relative; top: auto; left: auto; transform: none; }
     .card-container { justify-content: center; }
     
     .player-slot-info .player-name { font-size: 1.2em; max-width: 10ch; }
@@ -241,16 +262,12 @@ button:disabled { background-color: #555; border-color: #777; cursor: not-allowe
 
 /* --- DESKTOP SCOREBOARD --- */
 @media (min-width: 851px) {
-    /* REMOVED: Special background/pointer-events for scoreboard modal */
-    /* REMOVED: Special absolute positioning for scoreboard modal content */
     #scoreboard-modal .modal-content {
         /* Keep width and max-height constraints */
         width: 40%;
         max-width: 550px;
         /* Default centering will now apply */
     }
-    
-    /* REMOVED: Scroll/shrink rules from table container */
 }
 
 /* --- *** NEW STYLES FOR BID CONFIRMATION MODAL *** --- */

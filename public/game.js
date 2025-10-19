@@ -1,6 +1,6 @@
 window.addEventListener('DOMContentLoaded', () => {
-    // FIX: Use the full Render URL for a reliable connection
-    const socket = io('https.my-judgement-game.onrender.com');
+    // FIX: Corrected the URL typo (httpss -> https://)
+    const socket = io('https://my-judgement-game.onrender.com');
 
     window.gameState = {};
     let myPersistentPlayerId = sessionStorage.getItem('judgmentPlayerId');

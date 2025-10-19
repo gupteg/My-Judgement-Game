@@ -40,7 +40,7 @@ button:disabled { background-color: #555; border-color: #777; cursor: not-allowe
 .card-container { display: flex; flex-wrap: wrap; justify-content: flex-start; gap: 10px; max-width: 830px; margin: 0 auto; }
 
 .card { width: 110px; height: 154px; transition: all 0.2s ease; background-size: contain; background-repeat: no-repeat; background-position: center; border-radius: 8px; flex-shrink: 0; }
-.card.dragging { opacity: 0.5; transform: scale(1.05); box-shadow: 0 0 20px black; }
+.card.dragging { opacity: 0.5; transform: scale(1.05); box-shadow: 0 0 20px black; cursor: grabbing; /* Indicate dragging */ }
 .card:hover { transform: translateY(-15px) scale(1.05); z-index: 10; }
 .card.clickable:hover { cursor: pointer; box-shadow: 0 0 20px var(--gold-accent); }
 #local-player-score-board { display: flex; gap: 10px; margin-bottom: 10px; }
@@ -96,13 +96,13 @@ button:disabled { background-color: #555; border-color: #777; cursor: not-allowe
     box-sizing: border-box;
 }
 
-.card-placeholder { width: 80px; height: 112px; border: 2px dashed rgba(255,255,255,0.3); border-radius: 6px; position: relative; flex-shrink: 0; }
+.card-placeholder { width: 80px; height: 112px; border: 2px dashed rgba(255,255,255,0.3); border-radius: 6px; position: relative; flex-shrink: 0; transition: background-color 0.2s ease, border-color 0.2s ease; /* Smooth transition for drop highlight */ }
 .card-placeholder .card { width: 100%; height: 100%; }
 .card.newly-played { animation: play-card-anim 0.4s ease-out; }
 @keyframes play-card-anim { from { transform: scale(0.5) rotate(-15deg); opacity: 0; } to { transform: scale(1) rotate(0deg); opacity: 1; } }
 .winning-indicator { position: absolute; left: -25px; top: 50%; transform: translateY(-50%); font-size: 24px; color: var(--gold-accent); text-shadow: 0 0 5px black; }
 
-/* --- NEW: Style for drag-and-drop target --- */
+/* Style for drag-and-drop target */
 .card-placeholder.droppable {
     background-color: rgba(218, 165, 32, 0.2); /* gold-accent with alpha */
     border-style: solid;
@@ -142,17 +142,26 @@ button:disabled { background-color: #555; border-color: #777; cursor: not-allowe
 #trick-winner-overlay.show { opacity: 1; }
 
 .modal { position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.7); pointer-events: none; }
-.modal-content { background-color: var(--teak-dark); border: 2px solid var(--gold-accent); color: var(--light-text); padding: 25px; border-radius: 10px; text-align: center; width: 100%; max-width: 95%; box-shadow: 0 0 30px rgba(0,0,0,0.5); position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); pointer-events: auto; }
+.modal-content { background-color: var(--teak-dark); border: 2px solid var(--gold-accent); color: var(--light-text); padding: 25px; border-radius: 10px; text-align: center; width: 100%; max-width: 95%; box-shadow: 0 0 30px rgba(0,0,0,0.5); position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); pointer-events: auto; /* Ensure content is interactive */ display: flex; flex-direction: column; max-height: 90vh; /* Prevent modal from exceeding viewport height */ }
 .modal.hidden { display: none !important; }
-.modal:not(.hidden) { display: flex; }
-.modal-header { position: relative; cursor: move; padding-bottom: 15px; margin: -25px -25px 20px -25px; padding: 15px 25px; border-bottom: 1px solid var(--teak-light); user-select: none; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; }
+.modal:not(.hidden) { display: flex; /* Changed from default for consistency */ justify-content: center; /* Center horizontally */ align-items: center; /* Center vertically */ pointer-events: auto; /* Allow clicks on backdrop to close (optional) */ }
+.modal-header { position: relative; cursor: move; padding-bottom: 15px; margin: -25px -25px 20px -25px; padding: 15px 25px; border-bottom: 1px solid var(--teak-light); user-select: none; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; flex-shrink: 0; /* Prevent header from shrinking */ }
 .modal-header h2 { margin: 0; font-size: 1.5em; }
 #warning-modal .modal-header h2 { color: var(--gold-accent); } /* Style for new warning modal */
-.modal-actions { margin-top: 20px; display: flex; justify-content: center; gap: 15px; }
+.modal-actions { margin-top: 20px; display: flex; justify-content: center; gap: 15px; flex-shrink: 0; /* Prevent actions from shrinking */ }
 .modal-content .pause-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.75); display: flex; align-items: center; justify-content: center; color: var(--gold-accent); font-size: 1.5em; font-weight: bold; z-index: 10; border-radius: 8px; text-align: center; padding: 20px; box-sizing: border-box; }
 #lobby-return-countdown { margin-top: 20px; padding-top: 15px; border-top: 1px solid var(--teak-light); font-size: 1.2em; font-weight: bold; color: var(--gold-accent); }
 
-#next-round-preview { margin-top: 20px; padding: 15px; background: var(--teak-light); border: 3px solid var(--teak-dark); box-shadow: inset 0 0 10px rgba(0,0,0,0.5); border-radius: 10px; }
+/* --- NEW: Style for the scrollable content wrapper --- */
+.modal-scrollable-content {
+    overflow-y: auto;
+    padding-right: 10px; /* Space for scrollbar */
+    margin-right: -10px; /* Counteract padding for layout */
+    min-height: 0; /* Necessary for flex item scrolling */
+    flex-grow: 1; /* Allow it to take up available space */
+}
+
+#next-round-preview { margin-top: 20px; padding: 15px; background: var(--teak-light); border: 3px solid var(--teak-dark); box-shadow: inset 0 0 10px rgba(0,0,0,0.5); border-radius: 10px; flex-shrink: 0; /* Prevent shrinking */ }
 .plaque-title { font-size: 1.8em; font-weight: bold; color: var(--gold-accent); text-shadow: 1px 1px 2px var(--teak-dark); margin-bottom: 15px; }
 .trump-reveal-card { background: var(--parchment-bg); color: var(--dark-text); padding: 15px; margin: 10px auto; border-radius: 8px; width: 80%; max-width: 250px; box-shadow: 0 4px 8px rgba(0,0,0,0.3); border: 1px solid var(--teak-dark); }
 .trump-reveal-card .suit-icon { width: 60px; height: 60px; margin: 0 auto; }
@@ -164,7 +173,7 @@ button:disabled { background-color: #555; border-color: #777; cursor: not-allowe
 .next-round-detail-tile .tile-label { font-size: 0.9em; font-weight: bold; color: var(--teak-light); }
 .next-round-detail-tile .tile-value { font-size: 1.3em; font-weight: bold; margin-top: 5px; }
 
-.score-table { width: 100%; border-collapse: collapse; margin-top: 20px; background-color: var(--teak-light); }
+.score-table { width: 100%; border-collapse: collapse; margin-top: 20px; background-color: var(--teak-light); flex-shrink: 0; /* Prevent shrinking */ }
 .score-table th, .score-table td { border: 1px solid var(--teak-dark); padding: 8px; text-align: center; }
 .score-table th { background-color: var(--gold-accent); color: var(--teak-dark); }
 .score-table .correct-bid { color: #90ee90; font-weight: bold; }
@@ -204,6 +213,7 @@ button:disabled { background-color: #555; border-color: #777; cursor: not-allowe
     #center-column { border: none; background-color: var(--felt-green); }
 
     .modal { position: fixed; }
+    .modal-content { max-width: 90%; max-height: 85vh; } /* Adjust size for mobile */
     .card-container { justify-content: center; }
     
     .player-slot-info .player-name { font-size: 1.2em; max-width: 10ch; }
@@ -229,31 +239,18 @@ button:disabled { background-color: #555; border-color: #777; cursor: not-allowe
     .dot.active { background-color: white; }
 }
 
+/* --- DESKTOP SCOREBOARD --- */
 @media (min-width: 851px) {
-    #scoreboard-modal {
-        background-color: transparent;
-        pointer-events: none;
-    }
-
+    /* REMOVED: Special background/pointer-events for scoreboard modal */
+    /* REMOVED: Special absolute positioning for scoreboard modal content */
     #scoreboard-modal .modal-content {
-        pointer-events: auto;
-        position: absolute;
-        top: 20px;
-        left: 20px;
-        transform: none;
+        /* Keep width and max-height constraints */
         width: 40%;
         max-width: 550px;
-        max-height: calc(100vh - 40px);
-        display: flex;
-        flex-direction: column;
+        /* Default centering will now apply */
     }
     
-    #scoreboard-modal #scoreboard-table-container {
-        overflow-y: auto;
-        /* --- FIX: Added flex-shrink and min-height to fix overflow --- */
-        flex-shrink: 1;
-        min-height: 0;
-    }
+    /* REMOVED: Scroll/shrink rules from table container */
 }
 
 /* --- *** NEW STYLES FOR BID CONFIRMATION MODAL *** --- */

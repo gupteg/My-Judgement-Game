@@ -75,6 +75,7 @@ function setupGame(lobbyPlayers) {
         lastCompletedTrick: null, logHistory: [], // MODIFIED: Added log history to gameState
         isPaused: false, pausedForPlayerNames: [], pauseEndTime: null,
         phase: 'Bidding', nextRoundInfo: null, nextTrickReviewEnd: null,
+        isEnding: false, // MODIFIED: Added flag to prevent pausing during game end
     };
 }
 
@@ -129,6 +130,7 @@ function handleEndOfRound() {
 function handleGameOver() {
     if (gameState && gameState.phase !== 'GameOver') {
         gameState.phase = 'GameOver';
+        gameState.isEnding = true; // MODIFIED: Flag the game as ending
         Object.values(reconnectTimers).forEach(clearTimeout);
         const eligiblePlayers = gameState.players.filter(p => p.status !== 'Removed');
         const highestScore = Math.max(-Infinity, ...eligiblePlayers.map(p => p.score));
@@ -327,6 +329,7 @@ io.on('connection', (socket) => {
     socket.on('endGame', () => {
         const playerInGame = gameState ? gameState.players.find(p => p.socketId === socket.id) : null;
         if (playerInGame && playerInGame.isHost) {
+            gameState.isEnding = true; // MODIFIED: Flag the game as ending
             const finalPlayers = gameState.players.filter(p => p.status !== 'Removed');
             players = finalPlayers.map(p => ({
                 playerId: p.playerId, socketId: p.socketId, name: p.name,
@@ -493,6 +496,11 @@ io.on('connection', (socket) => {
 
     socket.on('disconnect', () => {
         if (gameState) {
+            // MODIFIED: Check if the game is already ending; if so, do nothing.
+            if (gameState.isEnding) {
+                return;
+            }
+
             const playerInGame = gameState.players.find(p => p.socketId === socket.id && p.status === 'Active');
             if (playerInGame) {
                 playerInGame.status = 'Disconnected';

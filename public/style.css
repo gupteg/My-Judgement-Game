@@ -7,7 +7,7 @@
 #page-indicator { display: none; } /* Hidden on desktop */
 
 :root { --teak-dark: #4a2c2a; --teak-light: #8c5b4f; --felt-green: #004d25; --gold-accent: #daa520; --light-text: #f5f5dc; --parchment-bg: #D2B48C; --dark-text: #4a2c2a; --busted-red: #c70039; }
-body { font-family: 'Georgia', 'Times New Roman', Times, serif; background-color: var(--teak-dark); background-image: url('https://www.transparenttextures.com/patterns/wood-pattern.png'); padding: 15px; margin: 0; height: 100vh; box-sizing: border-box; color: var(--light-text); overflow: hidden; }
+body { font-family: Helvetica, Arial, sans-serif; background-color: var(--teak-dark); background-image: url('https://www.transparenttextures.com/patterns/wood-pattern.png'); padding: 15px; margin: 0; height: 100vh; box-sizing: border-box; color: var(--light-text); overflow: hidden; }
 
 #join-screen, #lobby-screen { background-color: rgba(0,0,0,0.6); border: 2px solid var(--gold-accent); padding: 30px; border-radius: 10px; max-width: 450px; margin: 50px auto; text-align: center; box-shadow: 0 5px 25px rgba(0,0,0,0.5); }
 #join-screen h1, #lobby-screen h2 { margin-top: 0; color: var(--gold-accent); }
@@ -221,6 +221,30 @@ button:disabled { background-color: #555; border-color: #777; cursor: not-allowe
 .confetti { position: absolute; width: 10px; height: 10px; top: -20px; animation: confetti-fall 3s linear forwards; }
 @keyframes confetti-fall { to { top: 105vh; transform: rotate(360deg); } }
 
+/* --- NEW: Move Announcement Banner --- */
+#move-announcement-banner {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: rgba(0, 0, 0, 0.8);
+    color: var(--gold-accent);
+    padding: 8px 15px;
+    border-radius: 5px;
+    font-size: 2em; /* UPDATED */
+    font-weight: bold;
+    z-index: 1001;
+    opacity: 0;
+    transition: opacity 0.5s ease-in-out;
+    pointer-events: none;
+    white-space: nowrap;
+}
+#move-announcement-banner:not(.hidden) {
+    opacity: 1;
+}
+/* --- END NEW --- */
+
+
 /* --- MOBILE STYLES --- */
 @media (max-width: 850px) {
     body { overflow: hidden; height: 100vh; padding: 0; }
@@ -258,7 +282,14 @@ button:disabled { background-color: #555; border-color: #777; cursor: not-allowe
     #page-indicator { display: flex; justify-content: center; gap: 10px; position: fixed; bottom: 10px; left: 0; right: 0; z-index: 100; }
     .dot { width: 10px; height: 10px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.4); transition: background-color 0.3s ease; }
     .dot.active { background-color: white; }
+
+    /* --- NEW: Mobile font size for banner --- */
+    #move-announcement-banner {
+        font-size: 1.2em;
+    }
 }
+/* --- END MOBILE STYLES --- */
+
 
 /* --- DESKTOP SCOREBOARD --- */
 @media (min-width: 851px) {

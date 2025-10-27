@@ -10,6 +10,8 @@ window.addEventListener('DOMContentLoaded', () => {
     let trickReviewInterval;
     let actionBannerCountdownInterval;
     let pendingBid = null; // *** Store bid during confirmation ***
+    let previousGameState = null; // For move announcement diff
+    let moveAnnouncementTimeout = null; // Timer for move announcement
 
     socket.on('connect', () => {
         myPersistentPlayerId = sessionStorage.getItem('judgmentPlayerId');
@@ -230,6 +232,9 @@ window.addEventListener('DOMContentLoaded', () => {
     }
 
     socket.on('updateGameState', (gs) => {
+        handleMoveAnnouncement(gs, previousGameState);
+        previousGameState = JSON.parse(JSON.stringify(gs));
+
         const wasHidden = document.getElementById('scoreboard-modal').classList.contains('hidden')
                         && document.getElementById('scoreboard-modal').style.display === 'none';
 
@@ -969,6 +974,81 @@ window.addEventListener('DOMContentLoaded', () => {
 
         header.addEventListener('mousedown', dragMouseDown);
         header.addEventListener('touchstart', dragTouchStart, { passive: false }); // Need passive: false to preventDefault in touchmove
+    }
+
+
+    // --- NEW: Function to show move announcements ---
+    function showMoveAnnouncement(message) {
+        const banner = document.getElementById('move-announcement-banner');
+        if (!banner) return;
+
+        banner.textContent = message;
+        banner.classList.remove('hidden');
+
+        if (moveAnnouncementTimeout) {
+            clearTimeout(moveAnnouncementTimeout);
+        }
+
+        moveAnnouncementTimeout = setTimeout(() => {
+            banner.classList.add('hidden');
+            moveAnnouncementTimeout = null;
+        }, 3000); // 3-second duration
+    }
+
+    // --- NEW: Function to handle move announcements ---
+    function handleMoveAnnouncement(currentState, prevState) {
+        if (!prevState || !currentState || !currentState.logHistory || currentState.logHistory.length === 0) {
+            return;
+        }
+
+        // Don't show toasts if I am disconnected or removed
+        const me = currentState.players.find(p => p.playerId === myPersistentPlayerId);
+        if (me && (me.status === 'Removed' || me.status === 'Disconnected')) {
+            return;
+        }
+
+        const latestLog = currentState.logHistory[0];
+        const previousLog = prevState.logHistory[0];
+
+        // Skip if log hasn't changed or is a non-move
+        if (latestLog === previousLog || latestLog.includes('Round ') || latestLog.includes('GAME OVER') || latestLog.includes('Bidding complete')) {
+             return;
+        }
+
+        let message = "";
+        let nextPlayerName = "Unknown";
+        
+        // Find next player
+        if (currentState.phase === 'Playing' && currentState.players[currentState.currentPlayerIndex]) {
+            nextPlayerName = currentState.players[currentState.currentPlayerIndex].name;
+        } else if (currentState.phase === 'Bidding' && currentState.players[currentState.biddingPlayerIndex]) {
+            nextPlayerName = currentState.players[currentState.biddingPlayerIndex].name;
+        } else if (currentState.phase === 'TrickReview') {
+             const winner = currentState.players.find(p => p.playerId === currentState.trickWinnerId);
+             if(winner) nextPlayerName = winner.name;
+        }
+
+        // Parse log message
+        if (latestLog.includes(' bids ')) {
+            const match = latestLog.match(/📣 (.+?) bids (\d+)\./);
+            if (match) {
+                 message = `${match[1]} bids ${match[2]}. Next: ${nextPlayerName}`;
+            }
+        } else if (latestLog.includes(' played the ')) {
+            const match = latestLog.match(/› (.+?) played the (.+? of .+)\./);
+            if(match) {
+                 message = `${match[1]} played ${match[2]}. Next: ${nextPlayerName}`;
+            }
+        } else if (latestLog.includes(' wins the trick!')) {
+             const match = latestLog.match(/🏆 (.+?) wins the trick!/);
+             if (match) {
+                 message = `${match[1]} wins the trick! Next: ${nextPlayerName}`;
+             }
+        }
+
+        if (message) {
+            showMoveAnnouncement(message);
+        }
     }
 
 

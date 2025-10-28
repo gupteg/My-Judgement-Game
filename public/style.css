@@ -143,70 +143,130 @@ button:disabled { background-color: #555; border-color: #777; cursor: not-allowe
 
 .modal { position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.7); pointer-events: none; }
 .modal-content {
-    background-color: var(--teak-dark);
-    border: 2px solid var(--gold-accent);
-    color: var(--light-text);
+    background-color: var(--parchment-bg); /* UPDATED: Use parchment */
+    color: var(--dark-text);             /* UPDATED: Use dark text */
     padding: 25px;
-    border-radius: 10px;
+    border: 5px solid var(--teak-light);  /* UPDATED: Thicker wood border */
+    border-radius: 15px;                  /* UPDATED: More rounded */
     text-align: center;
-    width: 100%;
-    max-width: 95%;
+    width: auto; /* Allow auto width */
+    max-width: 95%; /* Limit maximum */
     box-shadow: 0 0 30px rgba(0,0,0,0.5);
-    /* --- REMOVED: Absolute centering properties --- */
-    pointer-events: auto; /* Ensure content is interactive */
+    pointer-events: auto;
     display: flex;
     flex-direction: column;
-    max-height: 90vh; /* Prevent modal from exceeding viewport height */
-    position: relative; /* Needed for JS positioning */
+    max-height: 80vh; /* Allow scrolling */
+    position: relative;
 }
 .modal.hidden { display: none !important; }
 .modal:not(.hidden) {
-    display: flex; /* Changed from default for consistency */
-    justify-content: center; /* Center horizontally */
-    align-items: center; /* Center vertically */
-    pointer-events: auto; /* Allow clicks on backdrop to close (optional) */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    pointer-events: auto;
 }
-.modal-header { position: relative; cursor: move; padding-bottom: 15px; margin: -25px -25px 20px -25px; padding: 15px 25px; border-bottom: 1px solid var(--teak-light); user-select: none; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; flex-shrink: 0; /* Prevent header from shrinking */ }
-.modal-header h2 { margin: 0; font-size: 1.5em; }
-#warning-modal .modal-header h2 { color: var(--gold-accent); } /* Style for new warning modal */
-.modal-actions { margin-top: 20px; display: flex; justify-content: center; gap: 15px; flex-shrink: 0; /* Prevent actions from shrinking */ }
-.modal-content .pause-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.75); display: flex; align-items: center; justify-content: center; color: var(--gold-accent); font-size: 1.5em; font-weight: bold; z-index: 10; border-radius: 8px; text-align: center; padding: 20px; box-sizing: border-box; }
-#lobby-return-countdown { margin-top: 20px; padding-top: 15px; border-top: 1px solid var(--teak-light); font-size: 1.2em; font-weight: bold; color: var(--gold-accent); }
+.modal-header {
+    position: relative;
+    cursor: move;
+    margin: -25px -25px 20px -25px; /* Adjust padding/margin */
+    padding: 15px 25px;
+    border-bottom: 2px solid var(--teak-light); /* UPDATED: Thicker border */
+    user-select: none; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none;
+    flex-shrink: 0;
+    display: flex; /* ADDED: Use flexbox */
+    justify-content: space-between; /* ADDED: Space title and close button */
+    align-items: center; /* ADDED: Align vertically */
+}
+.modal-header h2 {
+    margin: 0;
+    font-size: 1.5em;
+    color: var(--dark-text); /* UPDATED: Dark text for parchment */
+}
+#warning-modal .modal-header h2 { color: var(--busted-red); } /* Keep warning red */
+.close-btn { /* ADDED: Style close button */
+    font-size: 2em;
+    font-weight: bold;
+    color: var(--dark-text);
+    cursor: pointer;
+    background: none;
+    border: none;
+    padding: 0 5px;
+    line-height: 1;
+}
+.close-btn:hover { color: #000; }
 
-/* Style for the scrollable content wrapper */
+.modal-actions { margin-top: 20px; display: flex; justify-content: flex-end; /* Align right */ gap: 15px; flex-shrink: 0; }
+.modal-content .pause-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.75); display: flex; align-items: center; justify-content: center; color: var(--gold-accent); font-size: 1.5em; font-weight: bold; z-index: 10; border-radius: 8px; text-align: center; padding: 20px; box-sizing: border-box; }
+#lobby-return-countdown { margin-top: 20px; padding-top: 15px; border-top: 1px solid var(--teak-light); font-size: 1.2em; font-weight: bold; color: var(--teak-dark); }
+
 .modal-scrollable-content {
     overflow-y: auto;
-    padding-right: 10px; /* Space for scrollbar */
-    margin-right: -10px; /* Counteract padding for layout */
-    min-height: 0; /* Necessary for flex item scrolling */
-    flex-grow: 1; /* Allow it to take up available space */
+    padding: 15px 5px 15px 0; /* Adjust padding */
+    margin-top: 10px;
+    margin-bottom: 10px;
+    min-height: 100px; /* Ensure minimum height */
+    flex-grow: 1;
 }
 
-#next-round-preview { margin-top: 20px; padding: 15px; background: var(--teak-light); border: 3px solid var(--teak-dark); box-shadow: inset 0 0 10px rgba(0,0,0,0.5); border-radius: 10px; flex-shrink: 0; /* Prevent shrinking */ }
-.plaque-title { font-size: 1.8em; font-weight: bold; color: var(--gold-accent); text-shadow: 1px 1px 2px var(--teak-dark); margin-bottom: 15px; }
+#next-round-preview { margin-top: 20px; padding: 15px; background: rgba(0,0,0,0.1); /* Darker stripe */ border: 1px solid var(--teak-light); box-shadow: inset 0 0 10px rgba(0,0,0,0.3); border-radius: 10px; flex-shrink: 0; }
+.plaque-title { font-size: 1.8em; font-weight: bold; color: var(--dark-text); text-shadow: 1px 1px 2px rgba(255,255,255,0.2); margin-bottom: 15px; }
 .trump-reveal-card { background: var(--parchment-bg); color: var(--dark-text); padding: 15px; margin: 10px auto; border-radius: 8px; width: 80%; max-width: 250px; box-shadow: 0 4px 8px rgba(0,0,0,0.3); border: 1px solid var(--teak-dark); }
 .trump-reveal-card .suit-icon { width: 60px; height: 60px; margin: 0 auto; }
 .trump-reveal-card .suit-icon.no-trump-icon { font-size: 2.5em; font-weight: bold; color: var(--dark-text); }
 .trump-reveal-card .suit-name { font-weight: bold; font-size: 1.2em; margin-top: 5px; }
 
 .next-round-details-grid { display: flex; justify-content: space-around; align-items: stretch; margin-top: 15px; gap: 15px; }
-.next-round-detail-tile { flex: 1; background: var(--parchment-bg); color: var(--dark-text); border-radius: 8px; padding: 10px; text-align: center; border: 1px solid var(--teak-dark); }
+.next-round-detail-tile { flex: 1; background: rgba(0,0,0,0.05); color: var(--dark-text); border-radius: 8px; padding: 10px; text-align: center; border: 1px solid var(--teak-light); }
 .next-round-detail-tile .tile-label { font-size: 0.9em; font-weight: bold; color: var(--teak-light); }
 .next-round-detail-tile .tile-value { font-size: 1.3em; font-weight: bold; margin-top: 5px; }
 
-.score-table { width: 100%; border-collapse: collapse; margin-top: 20px; background-color: var(--teak-light); flex-shrink: 0; /* Prevent shrinking */ }
-.score-table th, .score-table td { border: 1px solid var(--teak-dark); padding: 8px; text-align: center; }
-.score-table th { background-color: var(--gold-accent); color: var(--teak-dark); }
-.score-table .correct-bid { color: #90ee90; font-weight: bold; }
-.score-table .incorrect-bid { color: #ff8c69; }
+/* --- *** MODIFICATION: New Uniform Score Table Styles *** --- */
+.uniform-score-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+    font-size: 0.9em;
+    color: var(--dark-text);
+    background-color: var(--parchment-bg);
+    flex-shrink: 0;
+}
+.uniform-score-table th,
+.uniform-score-table td {
+    border: 1px solid var(--teak-light);
+    padding: 8px 12px;
+    text-align: left;
+}
+.uniform-score-table th {
+    background-color: var(--teak-light);
+    color: var(--light-text);
+}
+.uniform-score-table tbody tr:nth-child(even) {
+    background-color: rgba(0,0,0,0.05); /* Subtle stripe */
+}
+.uniform-score-table tfoot td {
+    background-color: rgba(0,0,0,0.1);
+    font-weight: bold;
+    border-top: 2px solid var(--teak-light);
+}
+.uniform-score-table .score-col {
+    text-align: right;
+    font-weight: bold;
+    width: 80px; /* Align columns */
+}
+.uniform-score-table .correct-bid {
+    color: #006400; /* Darker green */
+    font-weight: bold;
+}
+.uniform-score-table .incorrect-bid {
+    color: #8B0000; /* Darker red */
+}
+/* --- *** END New Table Styles *** --- */
 
 #toast-notification { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); padding: 12px 24px; background-color: var(--gold-accent); color: var(--teak-dark); font-weight: bold; border-radius: 25px; z-index: 500; opacity: 0; transition: all 0.5s ease-in-out; pointer-events: none; width: 80%; }
 #toast-notification.show { opacity: 1; transform: translate(-50%, 10px); }
 .hidden { display: none !important; }
 
 #last-trick-modal .modal-content { max-width: 450px; }
-.close-btn { position: absolute; top: 50%; transform: translateY(-50%); right: 20px; font-size: 2em; font-weight: bold; color: var(--light-text); cursor: pointer; transition: color 0.2s ease; }
-.close-btn:hover { color: var(--gold-accent); }
 #last-trick-details { display: flex; flex-direction: column; gap: 10px; margin-top: 0; max-height: 350px; overflow-y: auto; }
 .last-trick-row { display: flex; justify-content: space-between; align-items: center; background-color: rgba(0,0,0,0.2); padding: 8px; border-radius: 6px; border: 2px solid transparent; }
 .last-trick-row.winner { border-color: var(--gold-accent); }
@@ -252,7 +312,7 @@ button:disabled { background-color: #555; border-color: #777; cursor: not-allowe
     #game-status-banner { position: fixed; top: 0; left: 0; right: 0; z-index: 100; margin: 0; border-radius: 0; font-size: 1.2em; padding: 8px; }
     #mobile-scroll-container { display: flex; flex-grow: 1; overflow-x: auto; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; padding-top: 50px; }
     #left-column, #center-column, #right-column { flex: 0 0 100%; width: 100%; max-height: 100%; box-sizing: border-box; padding: 15px; scroll-snap-align: center; overflow-y: auto; }
-    
+
     #left-column { padding-bottom: 50px; }
 
     #center-column { border: none; background-color: var(--felt-green); }
@@ -260,7 +320,7 @@ button:disabled { background-color: #555; border-color: #777; cursor: not-allowe
     .modal { position: fixed; }
     .modal-content { max-width: 90%; max-height: 85vh; /* Reset position for mobile */ position: relative; top: auto; left: auto; transform: none; }
     .card-container { justify-content: center; }
-    
+
     .player-slot-info .player-name { font-size: 1.2em; max-width: 10ch; }
     .bid-tile { font-size: 0.8em; padding: 4px 8px;}
     .player-score-bubble { width: 36px; height: 36px; font-size: 1em; }
@@ -268,7 +328,7 @@ button:disabled { background-color: #555; border-color: #777; cursor: not-allowe
 
     .card { width: 80px; height: 112px; }
     .score-box span { font-size: 2em; }
-    
+
     .vitals-tile { padding: 8px; }
     #trump-vitals-tile { padding: 10px; }
     .vitals-tile .label { font-size: 0.9em; }
@@ -278,7 +338,7 @@ button:disabled { background-color: #555; border-color: #777; cursor: not-allowe
 
     .trick-icon { width: 28px; height: 28px; }
     .trick-icon.zero-bid-icon { font-size: 0.6em; }
-    
+
     #page-indicator { display: flex; justify-content: center; gap: 10px; position: fixed; bottom: 10px; left: 0; right: 0; z-index: 100; }
     .dot { width: 10px; height: 10px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.4); transition: background-color 0.3s ease; }
     .dot.active { background-color: white; }

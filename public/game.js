@@ -97,7 +97,7 @@ window.addEventListener('DOMContentLoaded', () => {
         document.getElementById('submit-bid-btn').addEventListener('click', () => {
             const bidInput = document.getElementById('bid-input');
             pendingBid = bidInput.value; // Store the bid
-            
+
             // Populate and show the modal
             document.getElementById('confirm-bid-text').innerHTML = `You are bidding: <strong>${pendingBid}</strong>`;
             const confirmModal = document.getElementById('confirm-bid-modal');
@@ -346,17 +346,17 @@ window.addEventListener('DOMContentLoaded', () => {
 
     function setupHandInteractions(container, hand) {
         container.addEventListener('click', e => { if (e.target.classList.contains('card') && e.target.classList.contains('clickable')) { const card = getCardDataFromElement(e.target, hand); if (card) socket.emit('playCard', { card }); } });
-        
-        container.addEventListener('dragstart', e => { 
-            if (e.target.classList.contains('card')) { 
-                e.target.classList.add('dragging'); 
+
+        container.addEventListener('dragstart', e => {
+            if (e.target.classList.contains('card')) {
+                e.target.classList.add('dragging');
                 // --- NEW: Add card data to the drag event ---
                 e.dataTransfer.setData('text/plain', e.target.dataset.card);
-            } 
+            }
         });
 
         container.addEventListener('dragend', e => { if (e.target.classList.contains('card')) { e.target.classList.remove('dragging'); const newElements = [...container.querySelectorAll('.card')]; const newHand = newElements.map(el => getCardDataFromElement(el, hand)).filter(Boolean); if (newHand.length === hand.length) { socket.emit('rearrangeHand', { newHand }); } } });
-        
+
         container.addEventListener('dragover', e => {
             e.preventDefault();
             const draggingCard = document.querySelector('.dragging'); if (!draggingCard) return;
@@ -642,7 +642,45 @@ window.addEventListener('DOMContentLoaded', () => {
         renderGameLog(gs);
     }
 
-    function renderScoreboard(gs) { const container = document.getElementById('scoreboard-table-container'); container.innerHTML = ''; const table = document.createElement('table'); table.className = 'score-table'; let headerHtml = '<thead><tr><th>Round Details</th>'; gs.players.forEach(p => headerHtml += `<th>${p.name}</th>`); headerHtml += '</tr></thead>'; let bodyHtml = '<tbody>'; for (let i = 0; i < gs.roundNumber; i++) { const round = i + 1; const cardsDealt = gs.maxRounds - i; const trumpCycle = ['Spades', 'Hearts', 'Diamonds', 'Clubs', 'No Trump']; const trump = trumpCycle[i % 5]; bodyHtml += `<tr><td>R${round} (${cardsDealt} cards, ${getSuitSymbol(trump)})</td>`; gs.players.forEach(p => { const score = p.scoreHistory[i]; if (score === null) { bodyHtml += `<td>—</td>`; } else if (score !== undefined) { const isCorrect = score > 0; bodyHtml += `<td class="${isCorrect ? 'correct-bid' : 'incorrect-bid'}">${score > 0 ? '+' : ''}${score}</td>`; } else { bodyHtml += `<td>-</td>`; } }); bodyHtml += '</tr>'; } bodyHtml += '</tbody>'; let footerHtml = '<tfoot><tr><td><strong>Total</strong></td>'; gs.players.forEach(p => footerHtml += `<td><strong>${p.score}</strong></td>`); footerHtml += '</tr></tfoot>'; table.innerHTML = headerHtml + bodyHtml + footerHtml; container.appendChild(table); }
+    function renderScoreboard(gs) {
+        const container = document.getElementById('scoreboard-table-container');
+        container.innerHTML = '';
+        const table = document.createElement('table');
+
+        // --- *** MODIFICATION: Apply new uniform class *** ---
+        table.className = 'uniform-score-table';
+        // --- *** END MODIFICATION *** ---
+
+        let headerHtml = '<thead><tr><th>Round Details</th>';
+        gs.players.forEach(p => headerHtml += `<th>${p.name}</th>`);
+        headerHtml += '</tr></thead>';
+        let bodyHtml = '<tbody>';
+        for (let i = 0; i < gs.roundNumber; i++) {
+            const round = i + 1;
+            const cardsDealt = gs.maxRounds - i;
+            const trumpCycle = ['Spades', 'Hearts', 'Diamonds', 'Clubs', 'No Trump'];
+            const trump = trumpCycle[i % 5];
+            bodyHtml += `<tr><td>R${round} (${cardsDealt} cards, ${getSuitSymbol(trump)})</td>`;
+            gs.players.forEach(p => {
+                const score = p.scoreHistory[i];
+                if (score === null) {
+                    bodyHtml += `<td>—</td>`;
+                } else if (score !== undefined) {
+                    const isCorrect = score > 0;
+                    bodyHtml += `<td class="${isCorrect ? 'correct-bid' : 'incorrect-bid'} score-col">${score > 0 ? '+' : ''}${score}</td>`; // Added score-col
+                } else {
+                    bodyHtml += `<td>-</td>`;
+                }
+            });
+            bodyHtml += '</tr>';
+        }
+        bodyHtml += '</tbody>';
+        let footerHtml = '<tfoot><tr><td><strong>Total</strong></td>';
+        gs.players.forEach(p => footerHtml += `<td class="score-col"><strong>${p.score}</strong></td>`); // Added score-col
+        footerHtml += '</tr></tfoot>';
+        table.innerHTML = headerHtml + bodyHtml + footerHtml;
+        container.appendChild(table);
+    }
 
     function updateGameStatusBanner(gs) {
         const banner = document.getElementById('game-status-banner');
@@ -1017,7 +1055,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
         let message = "";
         let nextPlayerName = "Unknown";
-        
+
         // Find next player
         if (currentState.phase === 'Playing' && currentState.players[currentState.currentPlayerIndex]) {
             nextPlayerName = currentState.players[currentState.currentPlayerIndex].name;

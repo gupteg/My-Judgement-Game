@@ -245,7 +245,11 @@ io.on('connection', (socket) => {
             const disconnectedPlayers = gameState.players.filter(p => p.status === 'Disconnected');
             let playerToRejoin = null;
             if (playerId) playerToRejoin = disconnectedPlayers.find(p => p.playerId === playerId);
-            if (!playerToRejoin && disconnectedPlayers.length > 0) playerToRejoin = disconnectedPlayers.find(p => p.name === playerName);
+            // --- *** MODIFICATION: Case-insensitive name check *** ---
+            if (!playerToRejoin && disconnectedPlayers.length > 0) {
+                playerToRejoin = disconnectedPlayers.find(p => p.name.toLowerCase() === playerName.toLowerCase());
+            }
+            // --- *** END MODIFICATION *** ---
             if (playerToRejoin) {
                 playerToRejoin.status = 'Active';
                 playerToRejoin.socketId = socket.id;
@@ -353,7 +357,7 @@ io.on('connection', (socket) => {
             io.emit('lobbyUpdate', players);
         }
     });
-    
+
     // MODIFIED: Added hard reset handler
     socket.on('hardReset', () => {
         const host = players.find(p => p.socketId === socket.id && p.isHost);
@@ -377,14 +381,8 @@ io.on('connection', (socket) => {
             }
 
             // Reset lobby to just the host
-            players = [{
-                playerId: host.playerId,
-                socketId: host.socketId,
-                name: host.name,
-                isHost: true,
-                active: true,
-                isReady: true // Host is always ready in their own lobby
-            }];
+            host.isReady = true; // Explicitly set the host object's state
+            players = [host];    // Re-create the array with only this modified host object
 
             // Update the host's UI, which effectively updates everyone as they've been kicked
             io.emit('lobbyUpdate', players);
@@ -395,24 +393,24 @@ io.on('connection', (socket) => {
         if (!gameState || gameState.isPaused) return;
         const host = gameState.players.find(p => p.socketId === socket.id && p.isHost);
         if (!host) return;
-    
+
         const playerToMark = gameState.players.find(p => p.playerId === playerIdToMark);
         if (!playerToMark || playerToMark.status !== 'Active') return;
-    
+
         playerToMark.status = 'Disconnected';
         addLog(`Host ${host.name} marked ${playerToMark.name} as AFK. The game is paused.`);
-        
+
         gameState.isPaused = true;
         gameState.pausedForPlayerNames = gameState.players.filter(p => p.status === 'Disconnected').map(p => p.name);
         gameState.pauseEndTime = Date.now() + DISCONNECT_GRACE_PERIOD;
 
         io.to(playerToMark.socketId).emit('youWereMarkedAFK');
-    
+
         if (reconnectTimers[playerToMark.playerId]) clearTimeout(reconnectTimers[playerToMark.playerId]);
         reconnectTimers[playerToMark.playerId] = setTimeout(() => {
             handlePlayerRemoval(playerToMark.playerId);
         }, DISCONNECT_GRACE_PERIOD);
-    
+
         io.emit('updateGameState', gameState);
     });
 

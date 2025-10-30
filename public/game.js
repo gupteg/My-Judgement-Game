@@ -376,12 +376,17 @@ window.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // --- *** MODIFICATION: Added setTimeout to delay the Big Overlay *** ---
     socket.on('trickWon', ({ winnerName }) => {
-        const overlay = document.getElementById('trick-winner-overlay');
-        overlay.textContent = `${winnerName} wins the trick!`;
-        overlay.classList.add('show');
-        setTimeout(() => overlay.classList.remove('show'), 2900);
+        // This timer (3100ms) waits for the "played" log banner (3000ms) to fade
+        setTimeout(() => {
+            const overlay = document.getElementById('trick-winner-overlay');
+            overlay.textContent = `${winnerName} wins the trick!`;
+            overlay.classList.add('show');
+            setTimeout(() => overlay.classList.remove('show'), 2900);
+        }, 3100); 
     });
+    // --- *** END MODIFICATION *** ---
 
     socket.on('youWereMarkedAFK', () => {
         const afkModal = document.getElementById('afk-notification-modal');
@@ -1095,6 +1100,12 @@ window.addEventListener('DOMContentLoaded', () => {
 
         // Process each new log
         newLogs.forEach((latestLog, index) => {
+            // --- *** MODIFICATION: Skip the "wins the trick" log as requested *** ---
+            if (latestLog.includes(' wins the trick!')) {
+                return; 
+            }
+            // --- *** END MODIFICATION *** ---
+
             // Skip non-move logs
             if (latestLog.includes('Round ') || latestLog.includes('GAME OVER') || latestLog.includes('Bidding complete')) {
                 return;
@@ -1119,12 +1130,9 @@ window.addEventListener('DOMContentLoaded', () => {
                         showNextPlayer = false;
                     }
                 }
-            } else if (latestLog.includes(' wins the trick!')) {
-                const match = latestLog.match(/🏆 (.+?) wins the trick!/);
-                if (match) {
-                    message = `${match[1]} wins the trick!`;
-                }
-            }
+            } 
+            // Note: The "wins the trick" parser is now redundant due to the skip above,
+            // but is harmless to leave.
 
             // Add "Next Player" if appropriate
             if (message && showNextPlayer) {

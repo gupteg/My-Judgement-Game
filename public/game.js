@@ -11,7 +11,11 @@ window.addEventListener('DOMContentLoaded', () => {
     let actionBannerCountdownInterval;
     let pendingBid = null; // *** Store bid during confirmation ***
     let previousGameState = null; // For move announcement diff
-    let moveAnnouncementTimeout = null; // Timer for move announcement
+    
+    // --- *** MODIFICATION: Added queue for move announcements *** ---
+    let moveAnnouncementQueue = [];
+    let isAnnouncementVisible = false;
+    // --- *** END MODIFICATION *** ---
 
     socket.on('connect', () => {
         myPersistentPlayerId = sessionStorage.getItem('judgmentPlayerId');
@@ -1022,26 +1026,42 @@ window.addEventListener('DOMContentLoaded', () => {
     }
 
 
-    // --- NEW: Function to show move announcements ---
+    // --- *** MODIFICATION: Upgraded function to handle announcement queue *** ---
     function showMoveAnnouncement(message) {
         const banner = document.getElementById('move-announcement-banner');
         if (!banner) return;
 
-        banner.textContent = message;
-        banner.classList.remove('hidden');
-
-        if (moveAnnouncementTimeout) {
-            clearTimeout(moveAnnouncementTimeout);
+        // If a banner is already visible, queue this message
+        if (isAnnouncementVisible) {
+            moveAnnouncementQueue.push(message);
+            return;
         }
 
-        moveAnnouncementTimeout = setTimeout(() => {
-            banner.classList.add('hidden');
-            moveAnnouncementTimeout = null;
-        }, 3000); // 3-second duration
+        // --- Function to display the next message ---
+        const displayMessage = (msg) => {
+            banner.textContent = msg;
+            banner.classList.remove('hidden');
+            isAnnouncementVisible = true;
+
+            setTimeout(() => {
+                banner.classList.add('hidden');
+                isAnnouncementVisible = false;
+                
+                // Check the queue for the next message
+                if (moveAnnouncementQueue.length > 0) {
+                    const nextMessage = moveAnnouncementQueue.shift(); // Get next message
+                    displayMessage(nextMessage); // Display it
+                }
+            }, 3000); // 3-second duration
+        };
+
+        // Display the initial message
+        displayMessage(message);
     }
+    // --- *** END MODIFICATION *** ---
 
     // --- NEW: Function to handle move announcements ---
-    // --- *** MODIFIED: Fixed logic to read from the END of the log array *** ---
+    // --- *** NOTE: This logic is correct now due to server fix *** ---
     function handleMoveAnnouncement(currentState, prevState) {
         if (!prevState || !currentState || !currentState.logHistory || currentState.logHistory.length === 0) {
             return;
@@ -1065,12 +1085,11 @@ window.addEventListener('DOMContentLoaded', () => {
         if (latestLog.includes('Round ') || latestLog.includes('GAME OVER') || latestLog.includes('Bidding complete')) {
              return;
         }
-        // --- *** END MODIFICATION *** ---
 
         let message = "";
         let nextPlayerName = "Unknown";
 
-        // Find next player
+        // Find next player (This is now correct from the server)
         if (currentState.phase === 'Playing' && currentState.players[currentState.currentPlayerIndex]) {
             nextPlayerName = currentState.players[currentState.currentPlayerIndex].name;
         } else if (currentState.phase === 'Bidding' && currentState.players[currentState.biddingPlayerIndex]) {

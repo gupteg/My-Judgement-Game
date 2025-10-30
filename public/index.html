@@ -96,6 +96,8 @@
                 <div class="info-board" id="trump-info-panel"></div>
                 <div class="info-board" id="lead-suit-info-panel"></div>
                 <button id="view-last-trick-btn" style="display: none;">View Last Trick</button>
+                <button id="view-game-logs-btn">Show Game Logs</button>
+                
                 <div id="game-log-container">
                     <h4>Game Log</h4>
                     <ul id="game-log-list"></ul>
@@ -112,6 +114,17 @@
                 <span class="close-btn" id="close-last-trick-modal">&times;</span>
             </div>
             <div id="last-trick-details"></div>
+        </div>
+    </div>
+
+    <div id="game-logs-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Full Game Log</h2>
+                <span class="close-btn" id="close-game-logs-modal">&times;</span>
+            </div>
+            <div id="full-game-log-list-container">
+                </div>
         </div>
     </div>
 

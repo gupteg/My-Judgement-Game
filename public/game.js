@@ -176,6 +176,21 @@ window.addEventListener('DOMContentLoaded', () => {
             }
         });
 
+        // --- *** NEW: Game Logs Modal Listeners *** ---
+        const gameLogsModal = document.getElementById('game-logs-modal');
+        document.getElementById('view-game-logs-btn').addEventListener('click', () => renderFullGameLogModal(window.gameState));
+        document.getElementById('close-game-logs-modal').addEventListener('click', () => {
+            gameLogsModal.style.display = 'none';
+            gameLogsModal.classList.add('hidden');
+        });
+        gameLogsModal.addEventListener('click', (e) => {
+            if (e.target.id === 'game-logs-modal') {
+                gameLogsModal.style.display = 'none';
+                gameLogsModal.classList.add('hidden');
+            }
+        });
+        // --- *** END NEW *** ---
+
         const afkModal = document.getElementById('afk-notification-modal');
         document.getElementById('im-back-btn').addEventListener('click', () => {
             socket.emit('playerIsBack');
@@ -408,7 +423,11 @@ window.addEventListener('DOMContentLoaded', () => {
         if (lobbyReturnInterval) clearInterval(lobbyReturnInterval);
         document.getElementById('scoreboard-modal').style.display = 'none';
         document.getElementById('scoreboard-modal').classList.add('hidden');
-        document.getElementById('game-log-list').innerHTML = '';
+        
+        // --- *** MODIFICATION: Clear old log list *** ---
+        // document.getElementById('game-log-list').innerHTML = ''; // <-- DELETED
+        // --- *** END MODIFICATION *** ---
+
         isInitialGameRender = true;
         renderLobby(players);
     });
@@ -655,7 +674,10 @@ window.addEventListener('DOMContentLoaded', () => {
         } else {
             viewLastTrickBtn.style.display = 'none';
         }
-        renderGameLog(gs);
+        
+        // --- *** MODIFICATION: Removed call to renderGameLog *** ---
+        // renderGameLog(gs); // <-- DELETED
+        // --- *** END MODIFICATION *** ---
     }
 
     function renderScoreboard(gs) {
@@ -779,6 +801,28 @@ window.addEventListener('DOMContentLoaded', () => {
 
         modal.classList.remove('hidden');
     }
+
+    // --- *** NEW: Function to render the full game log modal *** ---
+    function renderFullGameLogModal(gs) {
+        const container = document.getElementById('full-game-log-list-container');
+        container.innerHTML = ''; // Clear old logs
+        const modal = document.getElementById('game-logs-modal');
+
+        if (gs && gs.logHistory) {
+            const logList = document.createElement('ul');
+            gs.logHistory.forEach(message => {
+                const li = document.createElement('li');
+                li.innerHTML = message;
+                logList.prepend(li); // Prepend to show newest first
+            });
+            container.appendChild(logList);
+        }
+
+        modal.style.display = 'flex';
+        modal.classList.remove('hidden');
+    }
+    // --- *** END NEW *** ---
+
 
     function createBidProgressHTML(player) {
         if (player.bid === null) {
@@ -932,18 +976,7 @@ window.addEventListener('DOMContentLoaded', () => {
     function createCardElement(card) { const cardEl = document.createElement('div'); cardEl.className = 'card'; cardEl.dataset.card = `${card.suit.toLowerCase()}_${rankMap[card.rank]}`; const rankName = rankMap[card.rank]; const suitName = card.suit.toLowerCase(); const imageName = `${suitName}_${rankName}.svg`; cardEl.style.backgroundImage = `url('/cards/${imageName}')`; return cardEl; }
     function getSuitSymbol(suit, isImage = false) { const symbols = { 'Spades': '♠️', 'Hearts': '♥️', 'Diamonds': '♦️', 'Clubs': '♣️', 'No Trump': 'NT' }; if (isImage) { if (suit === 'No Trump') return `<div class="no-trump">NO TRUMP</div>`; const suitName = suit?.toLowerCase(); if (!suitName) return '---'; return `<img src="/cards/suit_${suitName}.svg" alt="${suit}">`; } return symbols[suit] || suit; }
 
-    function renderGameLog(gs) {
-        const gameLogList = document.getElementById('game-log-list');
-        gameLogList.innerHTML = '';
-        if (gs.logHistory) {
-            const logsToDisplay = gs.logHistory.slice(-12);
-            logsToDisplay.forEach(message => {
-                const li = document.createElement('li');
-                li.innerHTML = message;
-                gameLogList.prepend(li);
-            });
-        }
-    }
+    // --- *** MODIFICATION: Deleted renderGameLog function *** ---
 
     function makeDraggable(modal) {
         const modalContent = modal.querySelector('.modal-content');
@@ -1154,5 +1187,6 @@ window.addEventListener('DOMContentLoaded', () => {
     makeDraggable(document.getElementById('afk-notification-modal'));
     makeDraggable(document.getElementById('confirm-hard-reset-modal'));
     makeDraggable(document.getElementById('warning-modal'));
-    makeDraggable(document.getElementById('confirm-bid-modal')); // *** Make new modal draggable ***
+    makeDraggable(document.getElementById('confirm-bid-modal'));
+    makeDraggable(document.getElementById('game-logs-modal')); // *** Make new modal draggable ***
 });

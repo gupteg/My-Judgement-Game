@@ -1050,7 +1050,8 @@ window.addEventListener('DOMContentLoaded', () => {
                 // Check the queue for the next message
                 if (moveAnnouncementQueue.length > 0) {
                     const nextMessage = moveAnnouncementQueue.shift(); // Get next message
-                    displayMessage(nextMessage); // Display it
+                    // Add a small delay so the fade-out/fade-in is visible
+                    setTimeout(() => displayMessage(nextMessage), 100); 
                 }
             }, 3000); // 3-second duration
         };
@@ -1060,8 +1061,7 @@ window.addEventListener('DOMContentLoaded', () => {
     }
     // --- *** END MODIFICATION *** ---
 
-    // --- NEW: Function to handle move announcements ---
-    // --- *** NOTE: This logic is correct now due to server fix *** ---
+    // --- *** MODIFICATION: Function logic completely updated *** ---
     function handleMoveAnnouncement(currentState, prevState) {
         if (!prevState || !currentState || !currentState.logHistory || currentState.logHistory.length === 0) {
             return;
@@ -1073,23 +1073,17 @@ window.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
+        const oldLogCount = prevState.logHistory ? prevState.logHistory.length : 0;
         // Check if the log history has actually grown
-        if (!prevState.logHistory || currentState.logHistory.length === prevState.logHistory.length) {
+        if (currentState.logHistory.length <= oldLogCount) {
             return;
         }
         
-        // Get the newest log from the END of the array
-        const latestLog = currentState.logHistory[currentState.logHistory.length - 1]; 
+        // Get *all* new logs, not just the last one
+        const newLogs = currentState.logHistory.slice(oldLogCount);
 
-        // Skip if log is a non-move
-        if (latestLog.includes('Round ') || latestLog.includes('GAME OVER') || latestLog.includes('Bidding complete')) {
-             return;
-        }
-
-        let message = "";
+        // Find next player (This is now correct from the server, as it's the final state)
         let nextPlayerName = "Unknown";
-
-        // Find next player (This is now correct from the server)
         if (currentState.phase === 'Playing' && currentState.players[currentState.currentPlayerIndex]) {
             nextPlayerName = currentState.players[currentState.currentPlayerIndex].name;
         } else if (currentState.phase === 'Bidding' && currentState.players[currentState.biddingPlayerIndex]) {
@@ -1099,28 +1093,51 @@ window.addEventListener('DOMContentLoaded', () => {
              if(winner) nextPlayerName = winner.name;
         }
 
-        // Parse log message
-        if (latestLog.includes(' bids ')) {
-            const match = latestLog.match(/📣 (.+?) bids (\d+)\./);
-            if (match) {
-                 message = `${match[1]} bids ${match[2]}. Next: ${nextPlayerName}`;
+        // Process each new log
+        newLogs.forEach((latestLog, index) => {
+            // Skip non-move logs
+            if (latestLog.includes('Round ') || latestLog.includes('GAME OVER') || latestLog.includes('Bidding complete')) {
+                return;
             }
-        } else if (latestLog.includes(' played the ')) {
-            const match = latestLog.match(/› (.+?) played the (.+? of .+)\./);
-            if(match) {
-                 message = `${match[1]} played ${match[2]}. Next: ${nextPlayerName}`;
-            }
-        } else if (latestLog.includes(' wins the trick!')) {
-             const match = latestLog.match(/🏆 (.+?) wins the trick!/);
-             if (match) {
-                 message = `${match[1]} wins the trick! Next: ${nextPlayerName}`;
-             }
-        }
 
-        if (message) {
-            showMoveAnnouncement(message);
-        }
+            let message = "";
+            let showNextPlayer = true;
+            const isLastInBatch = (index === newLogs.length - 1);
+
+            // Parse log message
+            if (latestLog.includes(' bids ')) {
+                const match = latestLog.match(/📣 (.+?) bids (\d+)\./);
+                if (match) {
+                    message = `${match[1]} bids ${match[2]}`;
+                }
+            } else if (latestLog.includes(' played the ')) {
+                const match = latestLog.match(/› (.+?) played the (.+? of .+)\./);
+                if(match) {
+                    message = `${match[1]} played ${match[2]}`;
+                    // *** YOUR REFINEMENT: If this is a "played" log and NOT the last in the batch, hide "Next Player" ***
+                    if (!isLastInBatch) {
+                        showNextPlayer = false;
+                    }
+                }
+            } else if (latestLog.includes(' wins the trick!')) {
+                const match = latestLog.match(/🏆 (.+?) wins the trick!/);
+                if (match) {
+                    message = `${match[1]} wins the trick!`;
+                }
+            }
+
+            // Add "Next Player" if appropriate
+            if (message && showNextPlayer) {
+                message += `. Next: ${nextPlayerName}`;
+            }
+
+            // Queue the announcement
+            if (message) {
+                showMoveAnnouncement(message);
+            }
+        });
     }
+    // --- *** END MODIFICATION *** ---
 
 
     makeDraggable(document.getElementById('scoreboard-modal'));

@@ -148,7 +148,14 @@ window.addEventListener('DOMContentLoaded', () => {
             socket.emit('endGame');
         });
         document.getElementById('start-next-round-btn').addEventListener('click', () => socket.emit('startNextRound'));
-        document.getElementById('end-game-from-modal-btn').addEventListener('click', () => socket.emit('endGame'));
+        
+        // --- *** MODIFICATION: "End Game" from modal now shows confirmation *** ---
+        document.getElementById('end-game-from-modal-btn').addEventListener('click', () => {
+            const confirmModal = document.getElementById('confirm-end-game-modal');
+            confirmModal.style.display = 'flex';
+            confirmModal.classList.remove('hidden');
+        });
+        // --- *** END MODIFICATION *** ---
 
         const scoreboardModal = document.getElementById('scoreboard-modal');
         document.getElementById('player-ok-btn').addEventListener('click', () => {
@@ -1034,6 +1041,7 @@ window.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- NEW: Function to handle move announcements ---
+    // --- *** MODIFIED: Fixed logic to read from the END of the log array *** ---
     function handleMoveAnnouncement(currentState, prevState) {
         if (!prevState || !currentState || !currentState.logHistory || currentState.logHistory.length === 0) {
             return;
@@ -1045,13 +1053,19 @@ window.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        const latestLog = currentState.logHistory[0];
-        const previousLog = prevState.logHistory[0];
+        // Check if the log history has actually grown
+        if (!prevState.logHistory || currentState.logHistory.length === prevState.logHistory.length) {
+            return;
+        }
+        
+        // Get the newest log from the END of the array
+        const latestLog = currentState.logHistory[currentState.logHistory.length - 1]; 
 
-        // Skip if log hasn't changed or is a non-move
-        if (latestLog === previousLog || latestLog.includes('Round ') || latestLog.includes('GAME OVER') || latestLog.includes('Bidding complete')) {
+        // Skip if log is a non-move
+        if (latestLog.includes('Round ') || latestLog.includes('GAME OVER') || latestLog.includes('Bidding complete')) {
              return;
         }
+        // --- *** END MODIFICATION *** ---
 
         let message = "";
         let nextPlayerName = "Unknown";

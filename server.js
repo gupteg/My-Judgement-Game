@@ -480,14 +480,19 @@ io.on('connection', (socket) => {
         gameState.currentTrick.push({ playerId: player.playerId, name: player.name, card });
         updateCurrentWinner(gameState);
         addLog(`› ${player.name} played the ${card.rank} of ${card.suit}.`);
-        io.emit('updateGameState', gameState);
+        
+        // --- *** MODIFICATION: Emit logic updated to fix "wrong next player" bug *** ---
+        // io.emit('updateGameState', gameState); // <-- DELETED this emit.
+        
         const activePlayersCount = gameState.players.filter(p => p.status === 'Active').length;
         if (gameState.currentTrick.length < activePlayersCount) {
             gameState.currentPlayerIndex = findNextActivePlayer(gameState.currentPlayerIndex, gameState.players);
-            io.emit('updateGameState', gameState);
+            io.emit('updateGameState', gameState); // <-- KEPT this emit.
         } else {
+            io.emit('updateGameState', gameState); // <-- ADDED this emit to send the final "played" log.
             evaluateTrick();
         }
+        // --- *** END MODIFICATION *** ---
     });
 
     socket.on('rearrangeHand', ({ newHand }) => { if (!gameState) return; const player = gameState.players.find(p => p.socketId === socket.id); if (player && newHand.length === player.hand.length) { player.hand = newHand; io.emit('updateGameState', gameState); } });

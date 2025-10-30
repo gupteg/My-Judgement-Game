@@ -378,13 +378,13 @@ window.addEventListener('DOMContentLoaded', () => {
 
     // --- *** MODIFICATION: Added setTimeout to delay the Big Overlay *** ---
     socket.on('trickWon', ({ winnerName }) => {
-        // This timer (3100ms) waits for the "played" log banner (3000ms) to fade
+        // This timer (2100ms) waits for the "played" log banner (2000ms) to fade
         setTimeout(() => {
             const overlay = document.getElementById('trick-winner-overlay');
             overlay.textContent = `${winnerName} wins the trick!`;
             overlay.classList.add('show');
             setTimeout(() => overlay.classList.remove('show'), 2900);
-        }, 3100); 
+        }, 2100); // --- MODIFIED: Was 3100
     });
     // --- *** END MODIFICATION *** ---
 
@@ -1058,7 +1058,7 @@ window.addEventListener('DOMContentLoaded', () => {
                     // Add a small delay so the fade-out/fade-in is visible
                     setTimeout(() => displayMessage(nextMessage), 100); 
                 }
-            }, 3000); // 3-second duration
+            }, 2000); // --- MODIFIED: Was 3000 (2-second duration)
         };
 
         // Display the initial message

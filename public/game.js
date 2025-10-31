@@ -420,6 +420,11 @@ window.addEventListener('DOMContentLoaded', () => {
     });
 
     socket.on('lobbyUpdate', (players) => {
+        // --- *** NEW: Check if game was in progress and show modal *** ---
+        const gameBoard = document.getElementById('game-board');
+        const wasInGame = gameBoard.style.display === 'flex';
+        // --- *** END NEW *** ---
+
         if (lobbyReturnInterval) clearInterval(lobbyReturnInterval);
         document.getElementById('scoreboard-modal').style.display = 'none';
         document.getElementById('scoreboard-modal').classList.add('hidden');
@@ -430,6 +435,12 @@ window.addEventListener('DOMContentLoaded', () => {
 
         isInitialGameRender = true;
         renderLobby(players);
+
+        // --- *** NEW: Show modal *after* renderLobby runs *** ---
+        if (wasInGame) {
+            showWarningModal('Game Ended', 'The Host has ended the game! You are being returned to the lobby.');
+        }
+        // --- *** END NEW *** ---
     });
 
     socket.on('forceDisconnect', () => {

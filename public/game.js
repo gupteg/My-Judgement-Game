@@ -15,7 +15,16 @@ window.addEventListener('DOMContentLoaded', () => {
     // --- *** MODIFICATION: Added queue for move announcements *** ---
     let moveAnnouncementQueue = [];
     let isAnnouncementVisible = false;
-    // --- *** END MODIFICATION *** ---
+    // --- *** END MODIFICATION --- ---
+
+    // --- *** NEW: Element References for Hostless Lobby *** ---
+    const hostMessage = document.getElementById('host-message');
+    const playerLobbyActions = document.getElementById('player-lobby-actions');
+    const hostLobbyActions = document.getElementById('host-lobby-actions');
+    const claimHostSection = document.getElementById('claim-host-section');
+    const claimHostPasswordInput = document.getElementById('claim-host-password-input');
+    const claimHostBtn = document.getElementById('claim-host-btn');
+    // --- *** END NEW REFERENCES *** ---
 
     socket.on('connect', () => {
         myPersistentPlayerId = sessionStorage.getItem('judgmentPlayerId');
@@ -43,22 +52,23 @@ window.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // --- *** MODIFIED: setupLobbyEventListeners *** ---
     function setupLobbyEventListeners() {
-        const playerActions = document.getElementById('player-lobby-actions');
-        const hostActions = document.getElementById('host-lobby-actions');
+        // playerActions is already defined at the top
+        // hostActions is already defined at the top
         const playerList = document.getElementById('player-list');
 
-        playerActions.addEventListener('click', (e) => {
+        playerLobbyActions.addEventListener('click', (e) => {
             if (e.target.id === 'ready-btn') {
                 socket.emit('setPlayerReady');
             }
         });
 
-        hostActions.addEventListener('click', (e) => {
+        hostLobbyActions.addEventListener('click', (e) => {
             const targetId = e.target.id;
             if (targetId === 'start-game-btn') {
-                const password = document.getElementById('host-password-input').value;
-                socket.emit('startGame', { password: password });
+                // Password is no longer needed here
+                socket.emit('startGame', {}); // Emit empty object
             } else if (targetId === 'end-session-btn') {
                 socket.emit('endSession');
             } else if (targetId === 'hard-reset-btn') {
@@ -68,6 +78,13 @@ window.addEventListener('DOMContentLoaded', () => {
             }
         });
 
+        // --- *** NEW: Claim Host Listener *** ---
+        claimHostBtn.addEventListener('click', () => {
+            const password = claimHostPasswordInput.value;
+            socket.emit('claimHost', { password: password });
+        });
+        // --- *** END NEW LISTENER *** ---
+
         playerList.addEventListener('click', (e) => {
             if (e.target.classList.contains('kick-btn')) {
                 const playerIdToKick = e.target.dataset.playerId;
@@ -75,6 +92,7 @@ window.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
+    // --- *** END MODIFICATION *** ---
 
     function setupDynamicEventListeners() {
         const scrollContainer = document.getElementById('mobile-scroll-container');
@@ -514,14 +532,17 @@ window.addEventListener('DOMContentLoaded', () => {
 
     const toastNotification = document.getElementById('toast-notification'); function showToast(message) { toastNotification.textContent = message; toastNotification.classList.add('show'); setTimeout(() => toastNotification.classList.remove('show'), 3000); }
 
+    // --- *** MODIFIED: renderLobby (Replaced) *** ---
     function renderLobby(players) {
         const me = players.find(p => p.playerId === myPersistentPlayerId);
         if (!me) {
              if (sessionStorage.getItem('judgmentPlayerId')) {
+                // This case handles being kicked or a server reset
                 sessionStorage.removeItem('judgmentPlayerId');
                 sessionStorage.removeItem('judgmentPlayerName');
                 location.reload();
              }
+             // This case handles initial join failure
              return;
         }
 
@@ -532,9 +553,7 @@ window.addEventListener('DOMContentLoaded', () => {
         const playerList = document.getElementById('player-list');
         playerList.innerHTML = '';
 
-        const readyBtn = document.getElementById('ready-btn');
-        readyBtn.textContent = 'Ready';
-        readyBtn.disabled = me.isReady;
+        const host = players.find(p => p.isHost);
 
         players.forEach(player => {
             const playerItem = document.createElement('li');
@@ -545,7 +564,12 @@ window.addEventListener('DOMContentLoaded', () => {
                 playerItem.classList.add('inactive-lobby-player');
                 content += ' (Offline)';
             }
-            const readyStatus = `<span class="ready-status">${player.isReady ? '✅ Ready' : '❌ Not Ready'}</span>`;
+            
+            let readyStatus = '';
+            if (host) { // Only show ready status if a host exists
+                 readyStatus = `<span class="ready-status">${player.isReady ? '✅ Ready' : '❌ Not Ready'}</span>`;
+            }
+
             let kickButton = '';
             if (me.isHost && player.playerId !== myPersistentPlayerId) {
                 kickButton = `<button class="kick-btn" data-player-id="${player.playerId}">Kick</button>`;
@@ -554,18 +578,40 @@ window.addEventListener('DOMContentLoaded', () => {
             playerList.appendChild(playerItem);
         });
 
-        const playerActions = document.getElementById('player-lobby-actions');
-        const hostActions = document.getElementById('host-lobby-actions');
+        const readyBtn = document.getElementById('ready-btn');
 
-        if (me.isHost) {
-            playerActions.style.display = 'none';
-            hostActions.style.display = 'flex';
-        } else {
-            playerActions.style.display = 'flex';
-            hostActions.style.display = 'none';
+        if (!host) {
+            // State 1: No Host Exists
+            playerLobbyActions.style.display = 'none';
+            hostLobbyActions.style.display = 'none';
+            claimHostSection.style.display = 'flex';
+            hostMessage.textContent = 'Waiting for a player to claim host...';
+            hostMessage.className = 'hostless-message'; // Apply new class
+            hostMessage.style.display = 'block';
+
+        } else if (host && me.isHost) {
+            // State 2: Host Exists, and I am the Host
+            playerLobbyActions.style.display = 'none';
+            hostLobbyActions.style.display = 'flex';
+            claimHostSection.style.display = 'none';
+            hostMessage.className = ''; // Remove class
+            hostMessage.style.display = 'none'; // Host doesn't need message
+
+        } else if (host && !me.isHost) {
+            // State 3: Host Exists, and I am NOT the Host
+            playerLobbyActions.style.display = 'flex';
+            hostLobbyActions.style.display = 'none';
+            claimHostSection.style.display = 'none';
+            hostMessage.textContent = '(Waiting for the host to start the game)';
+            hostMessage.className = ''; // Remove class
+            hostMessage.style.display = 'block';
+
+            // Update Ready button state
+            readyBtn.textContent = me.isReady ? 'Ready' : 'Ready';
+            readyBtn.disabled = me.isReady;
         }
-        document.getElementById('host-message').style.display = me.isHost ? 'none' : 'block';
     }
+    // --- *** END MODIFICATION *** ---
 
     function renderGameBoard(gs) {
         const myPlayer = gs.players.find(p => p.playerId === myPersistentPlayerId);

@@ -19,6 +19,26 @@ button:disabled { background-color: #555; border-color: #777; cursor: not-allowe
 #end-session-btn { background-color: #8B0000; border-color: #FF4500; }
 #end-session-btn:hover { background-color: #DC143C; }
 
+/* --- *** NEW: Claim Host Section Styles *** --- */
+#claim-host-section {
+    flex-direction: column;
+    gap: 10px;
+    align-items: stretch; /* Make items full width */
+}
+#claim-host-section input {
+    padding: 12px;
+    font-size: 1em;
+    border: 2px solid var(--teak-light);
+    border-radius: 5px;
+    background-color: var(--teak-dark);
+    color: white;
+    box-sizing: border-box; /* Ensure padding doesn't break width */
+}
+#claim-host-section button {
+    width: 100%; /* Make button full width */
+}
+/* --- *** END NEW STYLES *** --- */
+
 #host-controls { display: flex; flex-direction: column; gap: 10px; align-items: stretch; }
 #host-controls input { padding: 12px; font-size: 1em; border: 2px solid var(--teak-light); border-radius: 5px; background-color: var(--teak-dark); color: white; }
 .danger-btn { background-color: #800000; border-color: #c70039; }
@@ -30,6 +50,14 @@ button:disabled { background-color: #555; border-color: #777; cursor: not-allowe
 .ready-status { font-weight: bold; }
 .kick-btn { font-size: 0.8em; padding: 4px 10px; margin-left: 10px; background-color: #8B0000; border-color: #FF4500; }
 .kick-btn:hover { background-color: #DC143C; }
+
+/* --- *** NEW: Hostless Message Style *** --- */
+#host-message.hostless-message {
+    font-weight: bold;
+    font-size: 1.25em; /* This will make it larger than the default text */
+    color: var(--gold-accent); /* Make it stand out more */
+}
+/* --- *** END NEW STYLE *** --- */
 
 #local-player-stats { padding: 10px; background: rgba(0,0,0,0.3); border-radius: 8px; margin-bottom: 10px; text-align: center; }
 #local-player-stats h3 { margin: 0; color: var(--gold-accent); font-size: 1.5em; }
